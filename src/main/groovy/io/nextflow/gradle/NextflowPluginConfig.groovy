@@ -49,6 +49,11 @@ class NextflowPluginConfig {
      */
     List<String> extensionPoints = []
 
+    /**
+     * Configure how the plugin will be published (optional)
+     */
+    PluginPublishConfig publishing
+
     NextflowPluginConfig(Project project) {
         this.project = project
     }
@@ -62,5 +67,12 @@ class NextflowPluginConfig {
         if (!provider) {
             throw new RuntimeException('nextflowPlugin.provider not specified')
         }
+    }
+
+    // initialises the 'publishing' sub-config
+    def publishing(Closure config) {
+        publishing = new PluginPublishConfig(project)
+        project.configure(publishing, config)
+        publishing.validate()
     }
 }

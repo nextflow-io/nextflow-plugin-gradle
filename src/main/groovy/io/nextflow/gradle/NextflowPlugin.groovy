@@ -1,5 +1,7 @@
 package io.nextflow.gradle
 
+import io.nextflow.gradle.github.GithubUploadTask
+import io.nextflow.gradle.github.UpdateJsonIndexTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.GroovyPlugin
@@ -116,5 +118,37 @@ class NextflowPlugin implements Plugin<Project> {
         // installPlugin - installs plugin to (local) nextflow plugins dir
         project.tasks.register('installPlugin', PluginInstallTask)
         project.tasks.installPlugin.dependsOn << project.tasks.assemble
+
+        project.afterEvaluate {
+            if (config.publishing) {
+                // generateMeta - creates the meta.json file
+                project.tasks.register('generatePluginMeta', PluginMetadataTask)
+                project.tasks.generatePluginMeta.dependsOn << project.tasks.packagePlugin
+                project.tasks.assemble.dependsOn << project.tasks.generatePluginMeta
+
+                // publishPlugin - publishes plugin assets to a github repo
+                project.tasks.register('publishPlugin', GithubUploadTask)
+                project.tasks.publishPlugin.dependsOn << [
+                    project.tasks.packagePlugin,
+                    project.tasks.generatePluginMeta
+                ]
+
+                // updatePluginIndex - updates the central plugins.json index
+                if (config.publishing.updateIndex) {
+                    project.tasks.register('updatePluginIndex', UpdateJsonIndexTask)
+                    project.tasks.updatePluginIndex.dependsOn << project.tasks.generatePluginMeta
+                }
+
+                // releasePlugin - all the release/publishing actions
+                project.tasks.register('releasePlugin', {
+                    group = 'Nextflow Plugin'
+                    description = 'publish plugin and update central index'
+                })
+                project.tasks.releasePlugin.dependsOn << project.tasks.publishPlugin
+                if (config.publishing.updateIndex) {
+                    project.tasks.releasePlugin.dependsOn << project.tasks.updatePluginIndex
+                }
+            }
+        }
     }
 }
