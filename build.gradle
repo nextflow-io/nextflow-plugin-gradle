@@ -23,14 +23,14 @@ shadowJar {
 }
 
 gradlePlugin {
-    website = 'https://www.nextflow.io/'
+    website = 'https://github.com/nextflow-io/nextflow-plugin-gradle'
     vcsUrl = 'https://github.com/nextflow-io/nextflow-plugin-gradle'
 
     plugins {
         nextflowPlugin {
             id = 'io.nextflow.nextflow-plugin'
             displayName = 'Nextflow Plugin Gradle Plugin'
-            description = 'Gradle plugin for making Nextflow plugins'
+            description = 'A Gradle plugin to make it easier to create Nextflow plugins'
             tags.set(['nextflow'])
             implementationClass = 'io.nextflow.gradle.NextflowPlugin'
         }

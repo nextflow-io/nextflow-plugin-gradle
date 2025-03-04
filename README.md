@@ -1,5 +1,8 @@
 # Nextflow plugin Gradle plugin
 
+> [!WARNING]
+> This plugin is in early active development, please use `nextflow-io/nf-hello` for production usage for now.
+
 This is a [Gradle](https://gradle.org/) plugin for building [Nextflow](https://www.nextflow.io/) plugins.
 
 It sets up default dependencies required for integration with Nextflow, and adds some custom gradle tasks
@@ -12,6 +15,10 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 ```gradle
 plugins {
     id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha'
+}
+
+dependencies {
+    // (optional) put any library dependencies here
 }
 
 // plugin version
@@ -46,11 +53,25 @@ This will add some useful tasks to your Gradle build:
 * `installPlugin` - copy the assembled plugin into your local Nextflow plugins dir
 * `releasePlugin` - published the assembled plugin to a Github repository, and update the central plugins.json index repository
 
-## Usage
+You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
+```gradle
+rootProject.name = '<YOUR-PLUGIN-NAME>'
+```
 
-This plugin is currently in development and not yet published to the Gradle plugin portal.
+## Migrating an existing Nextflow plugin
 
-To try it out, follow these steps:
+Follow these steps to migrate an existing Nextflow plugin:
+
+1. If your project uses a `plugins` dir, move its `src` dir to the project root
+2. Make sure your plugin sources are now in `src/main/groovy` or `src/main/java`
+3. Replace any gradle build files with the configuration described above
+
+See https://github.com/nextflow-io/nf-hello/pull/21 for an example
+
+## To build and test the plugin locally
+
+This section is only relevant if you want to make changes to this Gradle plugin itself, and isn't 
+needed for developing Nextflow plugins.
 
 1. Checkout this project and install it to your local maven repo: `./gradlew publishToMavenLocal`
 2. In your Nextflow plugin project, add this to the `settings.gradle`:
@@ -62,7 +83,4 @@ pluginManagement {
     }
 }
 ```
-3. If your project uses a `plugins` dir, move the `src` dir to the project root
-4. Apply the configuration, as described above
-
-See https://github.com/nextflow-io/nf-hello/pull/21 for an example
+3. Apply the configuration, as described above
