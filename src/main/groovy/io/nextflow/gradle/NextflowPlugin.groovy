@@ -74,16 +74,16 @@ class NextflowPlugin implements Plugin<Project> {
                 }
 
                 // test-only dependencies (for writing tests)
-                deps.testImplementation "org.apache.groovy:groovy:4.0.18"
+                deps.testImplementation "org.apache.groovy:groovy"
                 deps.testImplementation "io.nextflow:nextflow:${nextflowVersion}"
                 deps.testImplementation("org.spockframework:spock-core:2.3-groovy-4.0") {
-                    exclude group: 'org.codehaus.groovy';
-                    exclude group: 'net.bytebuddy'
+                    exclude group: 'org.apache.groovy'
                 }
                 deps.testImplementation('org.spockframework:spock-junit4:2.3-groovy-4.0') {
-                    exclude group: 'org.codehaus.groovy';
-                    exclude group: 'net.bytebuddy'
+                    exclude group: 'org.apache.groovy'
                 }
+                deps.testRuntimeOnly "org.objenesis:objenesis:3.4"
+                deps.testRuntimeOnly "net.bytebuddy:byte-buddy:1.14.17"
                 deps.testImplementation(testFixtures("io.nextflow:nextflow:${nextflowVersion}"))
                 deps.testImplementation(testFixtures("io.nextflow:nf-commons:${nextflowVersion}"))
             }
@@ -118,6 +118,9 @@ class NextflowPlugin implements Plugin<Project> {
         // installPlugin - installs plugin to (local) nextflow plugins dir
         project.tasks.register('installPlugin', PluginInstallTask)
         project.tasks.installPlugin.dependsOn << project.tasks.assemble
+
+        // sometimes tests depend on the assembled plugin
+        project.tasks.test.dependsOn << project.tasks.assemble
 
         project.afterEvaluate {
             if (config.publishing) {
