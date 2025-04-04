@@ -137,7 +137,7 @@ class NextflowPlugin implements Plugin<Project> {
                 ]
 
                 // updatePluginIndex - updates the central plugins.json index
-                if (config.publishing.updateIndex) {
+                if (config.publishing.github.updateIndex) {
                     project.tasks.register('updatePluginIndex', UpdateJsonIndexTask)
                     project.tasks.updatePluginIndex.dependsOn << project.tasks.generatePluginMeta
                 }
@@ -148,7 +148,7 @@ class NextflowPlugin implements Plugin<Project> {
                     description = 'publish plugin and update central index'
                 })
                 project.tasks.releasePlugin.dependsOn << project.tasks.publishPlugin
-                if (config.publishing.updateIndex) {
+                if (config.publishing.github.updateIndex) {
                     project.tasks.releasePlugin.dependsOn << project.tasks.updatePluginIndex
                 }
             }

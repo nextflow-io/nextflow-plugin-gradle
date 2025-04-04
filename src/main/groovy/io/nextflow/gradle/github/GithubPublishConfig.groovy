@@ -32,6 +32,16 @@ class GithubPublishConfig {
      */
     boolean overwrite = false
 
+    /**
+     * Enable/disable publishing to the plugin index.
+     */
+    boolean updateIndex = true
+
+    /**
+     * The url of the json plugins index on github
+     */
+    String indexUrl = 'https://github.com/nextflow-io/plugins/main/plugins.json'
+
     GithubPublishConfig(Project project) {
         this.project = project
     }

@@ -14,7 +14,7 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 
 ```gradle
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha'
+    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha3'
 }
 
 dependencies {

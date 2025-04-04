@@ -30,7 +30,7 @@ class UpdateJsonIndexTask extends DefaultTask {
     def run() {
         final plugin = project.extensions.getByType(NextflowPluginConfig)
         final config = plugin.publishing.github
-        final indexUrl = plugin.publishing.indexUrl
+        final indexUrl = config.indexUrl
 
         // github client
         def (org, repo, branch, filename) = new URI(indexUrl).path.tokenize('/')
