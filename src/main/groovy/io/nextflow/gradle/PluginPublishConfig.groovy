@@ -2,6 +2,7 @@ package io.nextflow.gradle
 
 import groovy.transform.CompileStatic
 import io.nextflow.gradle.github.GithubPublishConfig
+import io.nextflow.gradle.registry.RegistryPublishConfig
 import org.gradle.api.Project
 
 /**
@@ -17,6 +18,11 @@ class PluginPublishConfig {
      */
     GithubPublishConfig github
 
+    /**
+     * Configuration for publishing to a registry
+     */
+    RegistryPublishConfig registry
+
     PluginPublishConfig(Project project) {
         this.project = project
     }
@@ -29,8 +35,8 @@ class PluginPublishConfig {
         project.configure(github, config)
     }
 
-    // get the url of the published plugin
-    def url() {
-        github.publishedUrl()
+    def registry(Closure config) {
+        registry = new RegistryPublishConfig(project)
+        project.configure(registry, config)
     }
 }

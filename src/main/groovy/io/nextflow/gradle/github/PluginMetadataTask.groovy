@@ -1,6 +1,7 @@
-package io.nextflow.gradle
+package io.nextflow.gradle.github
 
 import groovy.json.JsonOutput
+import io.nextflow.gradle.NextflowPluginConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
@@ -40,7 +41,7 @@ class PluginMetadataTask extends DefaultTask {
         final metadata = [
             version  : "${project.version}",
             date     : OffsetDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-            url      : config.publishing.url(),
+            url      : config.publishing.github.publishedUrl(),
             requires : ">=${config.nextflowVersion}",
             sha512sum: computeSha512(project.file(inputFile))
         ]

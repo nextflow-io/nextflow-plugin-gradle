@@ -14,8 +14,9 @@ repositories {
 
 dependencies {
     implementation 'commons-io:commons-io:2.18.0'
-    // needed for updating plugin index on github
     implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.14'
 }
 
 shadowJar {
