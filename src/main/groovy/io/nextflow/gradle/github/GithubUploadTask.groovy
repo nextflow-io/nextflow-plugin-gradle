@@ -1,6 +1,6 @@
 package io.nextflow.gradle.github
 
-
+import io.nextflow.gradle.NextflowPluginConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
@@ -33,7 +33,7 @@ class GithubUploadTask extends DefaultTask {
     @TaskAction
     def run() {
         final version = project.version.toString()
-        final plugin = project.extensions.nextflowPlugin
+        final plugin = project.extensions.getByType(NextflowPluginConfig)
         final config = plugin.publishing.github
 
         // github client
