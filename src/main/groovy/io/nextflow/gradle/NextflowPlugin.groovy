@@ -58,6 +58,7 @@ class NextflowPlugin implements Plugin<Project> {
         project.repositories { reps ->
             reps.mavenLocal()
             reps.mavenCentral()
+            reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
         }
 
         project.afterEvaluate {
