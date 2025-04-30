@@ -1,5 +1,6 @@
 package io.nextflow.gradle
 
+import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 
@@ -59,13 +60,24 @@ class NextflowPluginConfig {
     }
 
     def validate() {
-        if (nextflowVersion)
-
+        // check for missing config
+        if (!nextflowVersion) {
+            throw new RuntimeException('nextflowPlugin.nextflowVersion not specified')
+        }
         if (!className) {
             throw new RuntimeException('nextflowPlugin.className not specified')
         }
         if (!provider) {
             throw new RuntimeException('nextflowPlugin.provider not specified')
+        }
+
+        // validate name/id
+        if (!project.name.toString().matches(/[a-zA-Z0-9-]{5,64}/)) {
+            throw new RuntimeException("Plugin id '${project.name}' is invalid. Plugin ids can contain numbers, letters, and the '-' symbol")
+        }
+        // validate version is valid semver
+        if (!Version.isValid(project.version.toString(), true)) {
+            throw new RuntimeException("Plugin version '${project.version}' is invalid. Plugin versions must be a valid semantic version (semver) string")
         }
     }
 
