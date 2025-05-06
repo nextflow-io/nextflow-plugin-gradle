@@ -14,12 +14,14 @@ class RegistryClient {
     private final String authToken
 
     RegistryClient(URI url, String authToken) {
-        this.url = url
+        this.url = !url.toString().endsWith("/")
+            ? URI.create(url.toString() + "/")
+            : url
         this.authToken = authToken
     }
 
     def publish(String id, String version, File file) {
-        def req = new HttpPost(url.resolve("/publish"))
+        def req = new HttpPost(url.resolve("publish"))
         req.addHeader("Authorization", "Bearer ${authToken}")
         req.setEntity(MultipartEntityBuilder.create()
             .addTextBody("id", id)
