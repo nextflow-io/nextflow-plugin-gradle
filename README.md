@@ -36,13 +36,9 @@ nextflowPlugin {
     ]
 
     publishing {
-        github {
-            repository = 'example-inc/nf-example'
-            userName = project.findProperty('github_username')
-            authToken = project.findProperty('github_access_token')
-            email = project.findProperty('github_commit_email')
-
-            indexUrl = 'https://github.com/nextflow-io/plugins/main/plugins.json'
+        registry {
+            url = 'https://plugins.nextflow.io/api'
+            authToken = project.findProperty('registry_access_token')
         }
     }
 }
@@ -51,7 +47,7 @@ nextflowPlugin {
 This will add some useful tasks to your Gradle build:
 * `assemble` - compile the Nextflow plugin code and assemble it into a zip file
 * `installPlugin` - copy the assembled plugin into your local Nextflow plugins dir
-* `releasePlugin` - published the assembled plugin to a Github repository, and update the central plugins.json index repository
+* `releasePlugin` - publish the assembled plugin to the plugin registry
 
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle

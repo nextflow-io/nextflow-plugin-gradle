@@ -10,8 +10,7 @@ class RegistryPublishConfig {
     /**
      * Location of the registry api
      */
-    // replace this with default registry url
-    String url = 'http://localhost:8080'
+    String url = 'https://plugins.nextflow.io/api'
 
     /**
      * Registry authentication token
