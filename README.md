@@ -14,7 +14,7 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 
 ```gradle
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha3'
+    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha5'
 }
 
 dependencies {
@@ -26,9 +26,10 @@ version = '0.0.1'
 
 nextflowPlugin {
     // minimum nextflow version
-    nextflowVersion = '24.11.0-edge'
+    nextflowVersion = '25.04.0'
 
-    provider = 'example-inc'
+    provider = 'Example Inc'
+    description = 'My example plugin'
     className = 'com.example.ExamplePlugin'
     extensionPoints = [
         'com.example.ExampleObserver',

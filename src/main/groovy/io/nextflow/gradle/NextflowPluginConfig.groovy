@@ -35,6 +35,12 @@ class NextflowPluginConfig {
     String provider
 
     /**
+     * Description of this plugin.
+     * (optional)
+     */
+    String description
+
+    /**
      * What class should be created when the plugin is loaded?
      */
     String className

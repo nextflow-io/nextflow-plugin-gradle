@@ -27,6 +27,9 @@ class PluginManifest {
         if (config.provider) {
             jar.manifest.attributes('Plugin-Provider': config.provider)
         }
+        if (config.description) {
+            jar.manifest.attributes('Plugin-Description': config.description)
+        }
         if (!config.requirePlugins.isEmpty()) {
             jar.manifest.attributes('Plugin-Dependencies': config.requirePlugins)
         }
