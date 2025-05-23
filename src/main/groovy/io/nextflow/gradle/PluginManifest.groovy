@@ -30,8 +30,8 @@ class PluginManifest {
         if (config.description) {
             jar.manifest.attributes('Plugin-Description': config.description)
         }
-        if (!config.requirePlugins.isEmpty()) {
-            jar.manifest.attributes('Plugin-Dependencies': config.requirePlugins)
+        if (config.requirePlugins) {
+            jar.manifest.attributes('Plugin-Dependencies': config.requirePlugins.join(','))
         }
     }
 }
