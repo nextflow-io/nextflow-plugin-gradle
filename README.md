@@ -1,4 +1,4 @@
-# Nextflow plugin Gradle plugin
+# Gradle plugin for Nextflow
 
 > [!WARNING]
 > This plugin is in early active development, please use `nextflow-io/nf-hello` for production usage for now.
@@ -14,7 +14,7 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 
 ```gradle
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha5'
+    id 'io.nextflow.nextflow-plugin' version '0.0.1-alpha6'
 }
 
 dependencies {
@@ -81,3 +81,16 @@ pluginManagement {
 }
 ```
 3. Apply the configuration, as described above
+
+
+
+## Development of Gradle plugin for Nextflow 
+
+To release this plugin include the [Gradle plugins registry](https://plugins.gradle.org) API keys in your `gradle.properties`. 
+
+Then use this command:
+
+
+```
+./gradlew publishPlugins
+```
