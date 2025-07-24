@@ -1,11 +1,14 @@
 package io.nextflow.gradle.registry
 
 import com.google.gson.Gson
+import com.google.gson.JsonParseException
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClients
 
+@Slf4j
 @CompileStatic
 class RegistryClient {
     private final Gson gson = new Gson()
@@ -33,8 +36,14 @@ class RegistryClient {
              def rep = http.execute(req)) {
 
             if (rep.statusLine.statusCode != 200) {
-                def err = gson.fromJson(new InputStreamReader(rep.entity.content), ErrorResponse)
-                throw new RuntimeException("Failed to publish plugin: ${err.type} - ${err.message}")
+                def message = "Failed to publish plugin to registry $url: HTTP Response:${rep.statusLine}"
+                try{
+                    def err = gson.fromJson(new InputStreamReader(rep.entity.content), ErrorResponse)
+                    message << " - Error type: ${err?.type}, message: ${err?.message}"
+                } catch (JsonParseException e){
+                    log.debug("Exception parsing error response: $e.message")
+                }
+                throw new RuntimeException(message)
             }
         } catch (ConnectException e) {
             throw new RuntimeException("Unable to connect to plugin repository: (${e.message})")
