@@ -1,7 +1,6 @@
 package io.nextflow.gradle.registry
 
 import com.google.gson.Gson
-import com.google.gson.JsonParseException
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.http.client.methods.CloseableHttpResponse
@@ -38,7 +37,7 @@ class RegistryClient {
              def rep = http.execute(req)) {
 
             if (rep.statusLine.statusCode != 200) {
-                throw new RuntimeException(getErrorMessage(rep))
+                throw new RegistryPublishException(getErrorMessage(rep))
             }
         } catch (ConnectException e) {
             throw new RuntimeException("Unable to connect to plugin repository: (${e.message})")
@@ -50,23 +49,9 @@ class RegistryClient {
         if( rep.entity ) {
             final String entityStr = EntityUtils.toString(rep.entity)
             if (entityStr) {
-                try {
-                    def err = gson.fromJson(entityStr, ErrorResponse)
-                    if( err )
-                        return "$message - Error type: ${err.type}, message: ${err.message}".toString()
-                } catch( JsonParseException e ) {
-                    log.debug("Exception parsing error response: $e.message")
-                }
                 return "$message - $entityStr".toString()
             }
         }
         return message.toString()
-    }
-
-    // ----------------------------------------------------------------------------
-
-    private static class ErrorResponse {
-        String type
-        String message
     }
 }
