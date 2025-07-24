@@ -4,9 +4,11 @@ import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
 
 @Slf4j
 @CompileStatic
@@ -36,18 +38,29 @@ class RegistryClient {
              def rep = http.execute(req)) {
 
             if (rep.statusLine.statusCode != 200) {
-                def message = "Failed to publish plugin to registry $url: HTTP Response:${rep.statusLine}"
-                try{
-                    def err = gson.fromJson(new InputStreamReader(rep.entity.content), ErrorResponse)
-                    message << " - Error type: ${err?.type}, message: ${err?.message}"
-                } catch (JsonParseException e){
-                    log.debug("Exception parsing error response: $e.message")
-                }
-                throw new RuntimeException(message)
+                throw new RuntimeException(getErrorMessage(rep))
             }
         } catch (ConnectException e) {
             throw new RuntimeException("Unable to connect to plugin repository: (${e.message})")
         }
+    }
+
+    private String getErrorMessage(CloseableHttpResponse rep) {
+        def message = "Failed to publish plugin to registry $url: HTTP Response:${rep.statusLine}"
+        if( rep.entity ) {
+            final String entityStr = EntityUtils.toString(rep.entity)
+            if (entityStr) {
+                try {
+                    def err = gson.fromJson(entityStr, ErrorResponse)
+                    if( err )
+                        return "$message - Error type: ${err.type}, message: ${err.message}".toString()
+                } catch( JsonParseException e ) {
+                    log.debug("Exception parsing error response: $e.message")
+                }
+                return "$message - $entityStr".toString()
+            }
+        }
+        return message.toString()
     }
 
     // ----------------------------------------------------------------------------
