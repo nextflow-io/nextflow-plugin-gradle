@@ -1,8 +1,8 @@
 on:
   workflow_dispatch:
 
-#  push:
-#    branches: [ add_release_automation ]
+  push:
+#    branches: [ main ]
 #    paths: [ VERSION ]
 
 jobs:
