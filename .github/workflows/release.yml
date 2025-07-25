@@ -27,6 +27,8 @@ jobs:
 
       - name: Create Git Tag
         run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           VERSION=$(cat VERSION)
           git tag -a v$VERSION -m "Release v$VERSION"
           git push origin v$VERSION
