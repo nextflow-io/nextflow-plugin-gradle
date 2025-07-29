@@ -127,7 +127,7 @@ class NextflowPluginTest extends Specification {
                     return gradleProp.toString()
                 }
                 
-                // Mock environment variable for test
+                // Mock environment variable for test (NPR_API_URL)
                 return 'https://env-registry.com/api'
             }
         }

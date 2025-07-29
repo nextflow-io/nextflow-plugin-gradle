@@ -56,7 +56,7 @@ The registry publishing configuration supports multiple ways to provide the URL 
 The registry URL can be configured via (in order of priority):
 1. `nextflowPlugin.publishing.registry.url` in build.gradle
 2. Gradle property: `-Pnpr.url=https://your-registry.com/api`
-3. Environment variable: `NPR_URL=https://your-registry.com/api`
+3. Environment variable: `NPR_API_URL=https://your-registry.com/api`
 4. Default: `https://plugin-registry.seqera.io/api`
 
 #### API Key
@@ -77,7 +77,7 @@ npr.apiKey=your-secret-api-key
 
 Using environment variables:
 ```bash
-export NPR_URL=https://my-custom-registry.com/api
+export NPR_API_URL=https://my-custom-registry.com/api
 export NPR_API_KEY=your-secret-api-key
 ./gradlew publishPlugin
 ```

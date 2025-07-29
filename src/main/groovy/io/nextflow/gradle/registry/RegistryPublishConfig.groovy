@@ -37,7 +37,7 @@ class RegistryPublishConfig {
         }
         
         // Try environment variable
-        def envVar = System.getenv('NPR_URL')
+        def envVar = System.getenv('NPR_API_URL')
         if (envVar) {
             return envVar
         }
