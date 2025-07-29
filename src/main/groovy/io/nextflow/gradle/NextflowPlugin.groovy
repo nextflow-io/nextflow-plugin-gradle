@@ -161,15 +161,15 @@ class NextflowPlugin implements Plugin<Project> {
                     }
                 }
 
-                // finally, configure the destination-agnostic 'release' task
+                // finally, configure the destination-agnostic 'publish' task
                 if (!publishTasks.isEmpty()) {
-                    // releasePlugin - all the release/publishing actions
-                    project.tasks.register('releasePlugin', {
+                    // publishPlugin - all the release/publishing actions
+                    project.tasks.register('publishPlugin', {
                         group = 'Nextflow Plugin'
                         description = 'publish plugin to configured destinations'
                     })
                     for (task in publishTasks) {
-                        project.tasks.releasePlugin.dependsOn << task
+                        project.tasks.publishPlugin.dependsOn << task
                     }
                 }
             }
