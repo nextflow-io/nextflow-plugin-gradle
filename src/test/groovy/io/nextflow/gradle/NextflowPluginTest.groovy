@@ -101,7 +101,7 @@ class NextflowPluginTest extends Specification {
 
     def "should resolve registry URL from gradle property"() {
         given:
-        project.ext.set('npr.url', 'https://gradle-prop-registry.com/api')
+        project.ext.set('npr.apiUrl', 'https://gradle-prop-registry.com/api')
         def config = new RegistryPublishConfig(project)
 
         when:
@@ -122,7 +122,7 @@ class NextflowPluginTest extends Specification {
                 }
                 
                 // Try gradle property
-                def gradleProp = project.findProperty('npr.url')
+                def gradleProp = project.findProperty('npr.apiUrl')
                 if (gradleProp) {
                     return gradleProp.toString()
                 }

@@ -31,7 +31,7 @@ class RegistryPublishConfig {
         }
         
         // Try gradle property
-        def gradleProp = project.findProperty('npr.url')
+        def gradleProp = project.findProperty('npr.apiUrl')
         if (gradleProp) {
             return gradleProp.toString()
         }
