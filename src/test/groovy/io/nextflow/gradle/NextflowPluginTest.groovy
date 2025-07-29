@@ -43,28 +43,6 @@ class NextflowPluginTest extends Specification {
         project.tasks.publishPlugin.description == 'publish plugin to configured destinations'
     }
 
-    def "should register publishPlugin task when GitHub publishing is configured"() {
-        given:
-        project.nextflowPlugin {
-            description = 'A test plugin'
-            provider = 'Test Author'
-            className = 'com.example.TestPlugin'
-            nextflowVersion = '24.04.0'
-            extensionPoints = ['com.example.TestExtension']
-            publishing {
-                github {
-                    repository = 'test-owner/test-repo'
-                    authToken = 'test-token'
-                }
-            }
-        }
-
-        when:
-        project.evaluate()
-
-        then:
-        project.tasks.findByName('publishPlugin') != null
-    }
 
     def "should make publishPlugin depend on registry publishing task"() {
         given:
@@ -90,34 +68,6 @@ class NextflowPluginTest extends Specification {
         publishPlugin.taskDependencies.getDependencies(publishPlugin).contains(publishToRegistry)
     }
 
-    def "should make publishPlugin depend on GitHub publishing tasks"() {
-        given:
-        project.nextflowPlugin {
-            description = 'A test plugin'
-            provider = 'Test Author'
-            className = 'com.example.TestPlugin'
-            nextflowVersion = '24.04.0'
-            extensionPoints = ['com.example.TestExtension']
-            publishing {
-                github {
-                    repository = 'test-owner/test-repo'
-                    authToken = 'test-token'
-                    updateIndex = true
-                }
-            }
-        }
-
-        when:
-        project.evaluate()
-
-        then:
-        def publishPlugin = project.tasks.publishPlugin
-        def publishToGithub = project.tasks.publishPluginToGithub
-        def updateIndex = project.tasks.updateGithubIndex
-        def dependencies = publishPlugin.taskDependencies.getDependencies(publishPlugin)
-        dependencies.contains(publishToGithub)
-        dependencies.contains(updateIndex)
-    }
 
     def "should not register publishPlugin task when no publishing is configured"() {
         given:
@@ -136,32 +86,4 @@ class NextflowPluginTest extends Specification {
         project.tasks.findByName('publishPlugin') == null
     }
 
-    def "should register publishPlugin with both registry and GitHub publishing"() {
-        given:
-        project.nextflowPlugin {
-            description = 'A test plugin'
-            provider = 'Test Author'
-            className = 'com.example.TestPlugin'
-            nextflowVersion = '24.04.0'
-            extensionPoints = ['com.example.TestExtension']
-            publishing {
-                registry {
-                    url = 'https://example.com/registry'
-                }
-                github {
-                    repository = 'test-owner/test-repo'
-                    authToken = 'test-token'
-                }
-            }
-        }
-
-        when:
-        project.evaluate()
-
-        then:
-        def publishPlugin = project.tasks.publishPlugin
-        def dependencies = publishPlugin.taskDependencies.getDependencies(publishPlugin)
-        dependencies.contains(project.tasks.publishPluginToRegistry)
-        dependencies.contains(project.tasks.publishPluginToGithub)
-    }
 }
