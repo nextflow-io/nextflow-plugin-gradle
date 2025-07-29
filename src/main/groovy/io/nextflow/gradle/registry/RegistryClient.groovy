@@ -15,18 +15,18 @@ class RegistryClient {
     private final Gson gson = new Gson()
 
     private final URI url
-    private final String authToken
+    private final String apiKey
 
-    RegistryClient(URI url, String authToken) {
+    RegistryClient(URI url, String apiKey) {
         this.url = !url.toString().endsWith("/")
             ? URI.create(url.toString() + "/")
             : url
-        this.authToken = authToken
+        this.apiKey = apiKey
     }
 
     def publish(String id, String version, File file) {
         def req = new HttpPost(url.resolve("publish"))
-        req.addHeader("Authorization", "Bearer ${authToken}")
+        req.addHeader("Authorization", "Bearer ${apiKey}")
         req.setEntity(MultipartEntityBuilder.create()
             .addTextBody("id", id)
             .addTextBody("version", version)

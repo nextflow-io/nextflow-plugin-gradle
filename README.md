@@ -38,17 +38,54 @@ nextflowPlugin {
 
     publishing {
         registry {
-            url = 'https://plugins.nextflow.io/api'
-            authToken = project.findProperty('registry_access_token')
+            // Registry URL (optional, defaults to plugin-registry.seqera.io/api)
+            url = 'https://plugin-registry.seqera.io/api'
+            
+            // API key for authentication (required)
+            apiKey = project.findProperty('npr.apiKey')
         }
     }
 }
 ```
 
+### Registry Configuration
+
+The registry publishing configuration supports multiple ways to provide the URL and API key:
+
+#### Registry URL
+The registry URL can be configured via (in order of priority):
+1. `nextflowPlugin.publishing.registry.url` in build.gradle
+2. Gradle property: `-Pnpr.url=https://your-registry.com/api`
+3. Environment variable: `NPR_URL=https://your-registry.com/api`
+4. Default: `https://plugin-registry.seqera.io/api`
+
+#### API Key
+The API key can be configured via (in order of priority):
+1. `nextflowPlugin.publishing.registry.apiKey` in build.gradle
+2. Gradle property: `-Pnpr.apiKey=your-api-key`
+3. Environment variable: `NPR_API_KEY=your-api-key`
+
+**Note:** The API key is required for publishing. If none is provided, the plugin will show an error with configuration instructions.
+
+#### Example Configurations
+
+Using gradle.properties:
+```properties
+npr.url=https://my-custom-registry.com/api
+npr.apiKey=your-secret-api-key
+```
+
+Using environment variables:
+```bash
+export NPR_URL=https://my-custom-registry.com/api
+export NPR_API_KEY=your-secret-api-key
+./gradlew publishPlugin
+```
+
 This will add some useful tasks to your Gradle build:
 * `assemble` - compile the Nextflow plugin code and assemble it into a zip file
 * `installPlugin` - copy the assembled plugin into your local Nextflow plugins dir
-* `releasePlugin` - publish the assembled plugin to the plugin registry
+* `publishPlugin` - publish the assembled plugin to the plugin registry
 
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle
