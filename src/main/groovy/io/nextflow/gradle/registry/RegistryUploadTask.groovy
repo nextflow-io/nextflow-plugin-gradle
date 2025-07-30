@@ -30,7 +30,7 @@ class RegistryUploadTask extends DefaultTask {
         final plugin = project.extensions.getByType(NextflowPluginConfig)
         final config = plugin.publishing.registry
 
-        def client = new RegistryClient(new URI(config.url), config.authToken)
+        def client = new RegistryClient(new URI(config.getResolvedUrl()), config.getResolvedApiKey())
         client.publish(project.name, version, project.file(zipFile))
     }
 }

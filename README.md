@@ -38,11 +38,48 @@ nextflowPlugin {
 
     publishing {
         registry {
-            url = 'https://plugins.nextflow.io/api'
-            authToken = project.findProperty('registry_access_token')
+            // Registry URL (optional, defaults to plugin-registry.seqera.io/api)
+            url = 'https://plugin-registry.seqera.io/api'
+            
+            // API key for authentication (required)
+            apiKey = project.findProperty('npr.apiKey')
         }
     }
 }
+```
+
+### Registry Configuration
+
+The registry publishing configuration supports multiple ways to provide the URL and API key:
+
+#### Registry URL
+The registry URL can be configured via (in order of priority):
+1. `nextflowPlugin.publishing.registry.url` in build.gradle
+2. Gradle property: `-Pnpr.apiUrl=https://your-registry.com/api`
+3. Environment variable: `NPR_API_URL=https://your-registry.com/api`
+4. Default: `https://plugin-registry.seqera.io/api`
+
+#### API Key
+The API key can be configured via (in order of priority):
+1. `nextflowPlugin.publishing.registry.apiKey` in build.gradle
+2. Gradle property: `-Pnpr.apiKey=your-api-key`
+3. Environment variable: `NPR_API_KEY=your-api-key`
+
+**Note:** The API key is required for publishing. If none is provided, the plugin will show an error with configuration instructions.
+
+#### Example Configurations
+
+Using gradle.properties:
+```properties
+npr.apiUrl=https://my-custom-registry.com/api
+npr.apiKey=your-secret-api-key
+```
+
+Using environment variables:
+```bash
+export NPR_API_URL=https://my-custom-registry.com/api
+export NPR_API_KEY=your-secret-api-key
+./gradlew releasePlugin
 ```
 
 This will add some useful tasks to your Gradle build:
@@ -92,5 +129,5 @@ Then use this command:
 
 
 ```
-./gradlew publishPlugins
+./gradlew releasePlugins
 ```
