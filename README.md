@@ -79,13 +79,13 @@ Using environment variables:
 ```bash
 export NPR_API_URL=https://my-custom-registry.com/api
 export NPR_API_KEY=your-secret-api-key
-./gradlew publishPlugin
+./gradlew releasePlugin
 ```
 
 This will add some useful tasks to your Gradle build:
-* `assemble` - compile the Nextflow plugin code and assemble it into a zip file
-* `installPlugin` - copy the assembled plugin into your local Nextflow plugins dir
-* `publishPlugin` - publish the assembled plugin to the plugin registry
+* `assemble` - Compile the Nextflow plugin code and assemble it into a zip file
+* `installPlugin` - Copy the assembled plugin into your local Nextflow plugins dir
+* `releasePlugin` - Release the assembled plugin to the plugin registry
 
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle
@@ -129,5 +129,5 @@ Then use this command:
 
 
 ```
-./gradlew publishPlugins
+./gradlew releasePlugins
 ```
