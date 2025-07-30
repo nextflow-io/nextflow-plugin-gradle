@@ -46,9 +46,9 @@ nextflowPlugin {
 ```
 
 This will add some useful tasks to your Gradle build:
-* `assemble` - compile the Nextflow plugin code and assemble it into a zip file
-* `installPlugin` - copy the assembled plugin into your local Nextflow plugins dir
-* `releasePlugin` - publish the assembled plugin to the plugin registry
+* `assemble` - Compile the Nextflow plugin code and assemble it into a zip file
+* `installPlugin` - Copy the assembled plugin into your local Nextflow plugins dir
+* `releasePlugin` - Release the assembled plugin to the plugin registry
 
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle

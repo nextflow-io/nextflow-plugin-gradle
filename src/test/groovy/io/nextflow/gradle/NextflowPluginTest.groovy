@@ -19,7 +19,7 @@ class NextflowPluginTest extends Specification {
         project.pluginManager.apply('io.nextflow.nextflow-plugin')
     }
 
-    def "should register publishPlugin task when publishing is configured"() {
+    def "should register releasePlugin task when publishing is configured"() {
         given:
         project.nextflowPlugin {
             description = 'A test plugin'
@@ -38,13 +38,13 @@ class NextflowPluginTest extends Specification {
         project.evaluate()
 
         then:
-        project.tasks.findByName('publishPlugin') != null
-        project.tasks.publishPlugin.group == 'Nextflow Plugin'
-        project.tasks.publishPlugin.description == 'publish plugin to configured destinations'
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.releasePlugin.group == 'Nextflow Plugin'
+        project.tasks.releasePlugin.description == 'Release plugin to configured destination'
     }
 
 
-    def "should make publishPlugin depend on registry publishing task"() {
+    def "should make releasePlugin depend on registry publishing task"() {
         given:
         project.nextflowPlugin {
             description = 'A test plugin'
@@ -63,13 +63,13 @@ class NextflowPluginTest extends Specification {
         project.evaluate()
 
         then:
-        def publishPlugin = project.tasks.publishPlugin
-        def publishToRegistry = project.tasks.publishPluginToRegistry
-        publishPlugin.taskDependencies.getDependencies(publishPlugin).contains(publishToRegistry)
+        def releasePlugin = project.tasks.releasePlugin
+        def releaseToRegistry = project.tasks.releasePluginToRegistry
+        releasePlugin.taskDependencies.getDependencies(releasePlugin).contains(releaseToRegistry)
     }
 
 
-    def "should not register publishPlugin task when no publishing is configured"() {
+    def "should not register releasePlugin task when no publishing is configured"() {
         given:
         project.nextflowPlugin {
             description = 'A test plugin'
@@ -83,7 +83,7 @@ class NextflowPluginTest extends Specification {
         project.evaluate()
 
         then:
-        project.tasks.findByName('publishPlugin') == null
+        project.tasks.findByName('releasePlugin') == null
     }
 
 }

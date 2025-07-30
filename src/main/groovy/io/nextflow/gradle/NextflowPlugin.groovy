@@ -129,22 +129,22 @@ class NextflowPlugin implements Plugin<Project> {
 
                 // add registry publish task, if configured
                 if (config.publishing.registry) {
-                    // publishPluginToRegistry - publishes plugin to a plugin registry
-                    project.tasks.register('publishPluginToRegistry', RegistryUploadTask)
-                    project.tasks.publishPluginToRegistry.dependsOn << project.tasks.packagePlugin
-                    publishTasks << project.tasks.publishPluginToRegistry
+                    // releasePluginToRegistry - publishes plugin to a plugin registry
+                    project.tasks.register('releasePluginToRegistry', RegistryUploadTask)
+                    project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
+                    publishTasks << project.tasks.releasePluginToRegistry
                 }
 
 
-                // finally, configure the destination-agnostic 'publish' task
+                // finally, configure the destination-agnostic 'release' task
                 if (!publishTasks.isEmpty()) {
-                    // publishPlugin - all the release/publishing actions
-                    project.tasks.register('publishPlugin', {
+                    // releasePlugin - all the release/publishing actions
+                    project.tasks.register('releasePlugin', {
                         group = 'Nextflow Plugin'
-                        description = 'publish plugin to configured destinations'
+                        description = 'Release plugin to configured destination'
                     })
                     for (task in publishTasks) {
-                        project.tasks.publishPlugin.dependsOn << task
+                        project.tasks.releasePlugin.dependsOn << task
                     }
                 }
             }
