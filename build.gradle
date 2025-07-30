@@ -20,10 +20,7 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpmime:4.5.14'
 
     testImplementation('org.spockframework:spock-core:2.3-groovy-3.0')
-    testImplementation('org.spockframework:spock-junit4:2.1-groovy-3.0')
     testImplementation 'org.wiremock:wiremock:3.5.4'
-    testImplementation 'org.objenesis:objenesis:3.4'
-    testImplementation 'net.bytebuddy:byte-buddy:1.14.17'
 }
 
 test {
