@@ -1,8 +1,5 @@
 package io.nextflow.gradle
 
-import io.nextflow.gradle.github.GithubUploadTask
-import io.nextflow.gradle.github.PluginMetadataTask
-import io.nextflow.gradle.github.UpdateJsonIndexTask
 import io.nextflow.gradle.registry.RegistryUploadTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -132,41 +129,19 @@ class NextflowPlugin implements Plugin<Project> {
 
                 // add registry publish task, if configured
                 if (config.publishing.registry) {
-                    // publishPluginToRegistry - publishes plugin to a plugin registry
-                    project.tasks.register('publishPluginToRegistry', RegistryUploadTask)
-                    project.tasks.publishPluginToRegistry.dependsOn << project.tasks.packagePlugin
-                    publishTasks << project.tasks.publishPluginToRegistry
+                    // releasePluginToRegistry - publishes plugin to a plugin registry
+                    project.tasks.register('releasePluginToRegistry', RegistryUploadTask)
+                    project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
+                    publishTasks << project.tasks.releasePluginToRegistry
                 }
 
-                // add github publish task(s), if configured
-                if (config.publishing.github) {
-                    // generateGithubMeta - creates the meta.json file
-                    project.tasks.register('generateGithubMeta', PluginMetadataTask)
-                    project.tasks.generateGithubMeta.dependsOn << project.tasks.packagePlugin
-                    project.tasks.assemble.dependsOn << project.tasks.generateGithubMeta
-
-                    // publishPluginToGithub - publishes plugin assets to a github repo
-                    project.tasks.register('publishPluginToGithub', GithubUploadTask)
-                    project.tasks.publishPluginToGithub.dependsOn << [
-                        project.tasks.packagePlugin,
-                        project.tasks.generateGithubMeta
-                    ]
-                    publishTasks << project.tasks.publishPluginToGithub
-
-                    // updateGithubIndex - updates the central plugins.json index
-                    if (config.publishing.github.updateIndex) {
-                        project.tasks.register('updateGithubIndex', UpdateJsonIndexTask)
-                        project.tasks.updateGithubIndex.dependsOn << project.tasks.generateGithubMeta
-                        publishTasks << project.tasks.updateGithubIndex
-                    }
-                }
 
                 // finally, configure the destination-agnostic 'release' task
                 if (!publishTasks.isEmpty()) {
                     // releasePlugin - all the release/publishing actions
                     project.tasks.register('releasePlugin', {
                         group = 'Nextflow Plugin'
-                        description = 'publish plugin to configured destinations'
+                        description = 'Release plugin to configured destination'
                     })
                     for (task in publishTasks) {
                         project.tasks.releasePlugin.dependsOn << task
