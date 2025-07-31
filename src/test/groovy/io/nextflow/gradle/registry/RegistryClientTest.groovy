@@ -1,0 +1,163 @@
+package io.nextflow.gradle.registry
+
+import com.github.tomakehurst.wiremock.WireMockServer
+import spock.lang.Specification
+import spock.lang.TempDir
+
+import java.nio.file.Path
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+
+class RegistryClientTest extends Specification {
+
+    WireMockServer wireMockServer
+    RegistryClient client
+    @TempDir
+    Path tempDir
+
+    def setup() {
+        wireMockServer = new WireMockServer(wireMockConfig().port(0))
+        wireMockServer.start()
+        def baseUrl = "http://localhost:${wireMockServer.port()}"
+        client = new RegistryClient(new URI(baseUrl), "test-token")
+    }
+
+    def cleanup() {
+        wireMockServer?.stop()
+    }
+
+    def "should construct client with URL ending in slash"() {
+        when:
+        def client1 = new RegistryClient(new URI("http://example.com"), "token")
+        def client2 = new RegistryClient(new URI("http://example.com/"), "token")
+
+        then:
+        client1.url.toString() == "http://example.com/"
+        client2.url.toString() == "http://example.com/"
+    }
+
+    def "Should fail when no token provided"(){
+        when:
+        new RegistryClient(new URI("http://example.com"), null)
+        then:
+        def ex = thrown(RegistryPublishException)
+        ex.message == "Authentication token not specified - Provide a valid token in 'publishing.registry' configuration"
+    }
+
+    def "should successfully publish plugin"() {
+        given:
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin content"
+        
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+            .withHeader("Authorization", equalTo("Bearer test-token"))
+            .withRequestBody(containing("id"))
+            .withRequestBody(containing("version"))
+            .withRequestBody(containing("file"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody('{"status": "success"}')))
+
+        when:
+        client.publish("test-plugin", "1.0.0", pluginFile)
+
+        then:
+        noExceptionThrown()
+        
+        and:
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/publish"))
+            .withHeader("Authorization", equalTo("Bearer test-token")))
+    }
+
+    def "should throw RegistryPublishException on HTTP error without response body"() {
+        given:
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin content"
+        
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+            .willReturn(aResponse()
+                .withStatus(400)))
+
+        when:
+        client.publish("test-plugin", "1.0.0", pluginFile)
+
+        then:
+        def ex = thrown(RegistryPublishException)
+        ex.message.contains("Failed to publish plugin to registry")
+        ex.message.contains("HTTP Response: HTTP/1.1 400 Bad Request")
+    }
+
+    def "should throw RegistryPublishException on HTTP error with response body"() {
+        given:
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin content"
+        
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+            .willReturn(aResponse()
+                .withStatus(422)
+                .withBody('{"error": "Plugin validation failed"}')))
+
+        when:
+        client.publish("test-plugin", "1.0.0", pluginFile)
+
+        then:
+        def ex = thrown(RegistryPublishException)
+        ex.message.contains("Failed to publish plugin to registry")
+        ex.message.contains("HTTP Response: HTTP/1.1 422 Unprocessable Entity")
+        ex.message.contains('{"error": "Plugin validation failed"}')
+    }
+
+    def "should fail when connection error"() {
+        given:
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin content"
+        
+        // Stop the server to simulate connection error
+        wireMockServer.stop()
+
+        when:
+        client.publish("test-plugin", "1.0.0", pluginFile)
+
+        then:
+        def ex = thrown(RegistryPublishException)
+        ex.message.startsWith("Unable to connect to plugin repository: ")
+        ex.message.contains("failed: Connection refused")
+    }
+
+    def "should fail when unknown host"(){
+        given:
+        def clientNotfound = new RegistryClient(new URI("http://fake-host.fake-domain-blabla.com"), "token")
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin content"
+
+        when:
+        clientNotfound.publish("test-plugin", "1.0.0", pluginFile)
+
+        then:
+        def ex = thrown(RegistryPublishException)
+        ex.message == "Unable to connect to plugin repository: fake-host.fake-domain-blabla.com: Name or service not known"
+    }
+
+    def "should send correct multipart form data"() {
+        given:
+        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
+        pluginFile.text = "fake plugin zip content"
+        
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+            .willReturn(aResponse().withStatus(200)))
+
+        when:
+        client.publish("my-plugin", "2.1.0", pluginFile)
+
+        then:
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/publish"))
+            .withHeader("Authorization", equalTo("Bearer test-token"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"id\""))
+            .withRequestBody(containing("my-plugin"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
+            .withRequestBody(containing("2.1.0"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"file\""))
+            .withRequestBody(containing("fake plugin zip content")))
+    }
+}
