@@ -57,9 +57,9 @@ class NextflowPluginConfig {
     List<String> extensionPoints = []
 
     /**
-     * Configure how the plugin will be published (optional)
+     * Configure how the plugin will be released (optional)
      */
-    PluginPublishConfig publishing
+    PluginReleaseConfig publishing
 
     NextflowPluginConfig(Project project) {
         this.project = project
@@ -89,7 +89,7 @@ class NextflowPluginConfig {
 
     // initialises the 'publishing' sub-config
     def publishing(Closure config) {
-        publishing = new PluginPublishConfig(project)
+        publishing = new PluginReleaseConfig(project)
         project.configure(publishing, config)
         publishing.validate()
     }

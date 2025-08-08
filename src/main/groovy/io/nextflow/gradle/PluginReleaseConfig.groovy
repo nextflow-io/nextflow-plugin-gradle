@@ -1,7 +1,7 @@
 package io.nextflow.gradle
 
 import groovy.transform.CompileStatic
-import io.nextflow.gradle.registry.RegistryPublishConfig
+import io.nextflow.gradle.registry.RegistryReleaseConfig
 import org.gradle.api.Project
 
 /**
@@ -9,22 +9,22 @@ import org.gradle.api.Project
  * configuration from build.gradle.
  */
 @CompileStatic
-class PluginPublishConfig {
+class PluginReleaseConfig {
     private final Project project
 
     /**
-     * Configuration for publishing to a registry
+     * Configuration for releasing to a registry
      */
-    RegistryPublishConfig registry
+    RegistryReleaseConfig registry
 
-    PluginPublishConfig(Project project) {
+    PluginReleaseConfig(Project project) {
         this.project = project
     }
 
     def validate() {}
 
     def registry(Closure config) {
-        registry = new RegistryPublishConfig(project)
+        registry = new RegistryReleaseConfig(project)
         project.configure(registry, config)
     }
 }

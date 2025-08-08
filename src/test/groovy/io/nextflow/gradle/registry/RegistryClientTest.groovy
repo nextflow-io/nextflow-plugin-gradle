@@ -41,7 +41,7 @@ class RegistryClientTest extends Specification {
         when:
         new RegistryClient(new URI("http://example.com"), null)
         then:
-        def ex = thrown(RegistryPublishException)
+        def ex = thrown(RegistryReleaseException)
         ex.message == "Authentication token not specified - Provide a valid token in 'publishing.registry' configuration"
     }
 
@@ -50,59 +50,59 @@ class RegistryClientTest extends Specification {
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
         
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("id"))
             .withRequestBody(containing("version"))
-            .withRequestBody(containing("file"))
+            .withRequestBody(containing("artifact"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withBody('{"status": "success"}')))
 
         when:
-        client.publish("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile)
 
         then:
         noExceptionThrown()
         
         and:
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token")))
     }
 
-    def "should throw RegistryPublishException on HTTP error without response body"() {
+    def "should throw RegistryReleaseException on HTTP error without response body"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
         
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(400)))
 
         when:
-        client.publish("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile)
 
         then:
-        def ex = thrown(RegistryPublishException)
+        def ex = thrown(RegistryReleaseException)
         ex.message.contains("Failed to publish plugin to registry")
         ex.message.contains("HTTP Response: HTTP/1.1 400 Bad Request")
     }
 
-    def "should throw RegistryPublishException on HTTP error with response body"() {
+    def "should throw RegistryReleaseException on HTTP error with response body"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
         
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(422)
                 .withBody('{"error": "Plugin validation failed"}')))
 
         when:
-        client.publish("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile)
 
         then:
-        def ex = thrown(RegistryPublishException)
+        def ex = thrown(RegistryReleaseException)
         ex.message.contains("Failed to publish plugin to registry")
         ex.message.contains("HTTP Response: HTTP/1.1 422 Unprocessable Entity")
         ex.message.contains('{"error": "Plugin validation failed"}')
@@ -117,10 +117,10 @@ class RegistryClientTest extends Specification {
         wireMockServer.stop()
 
         when:
-        client.publish("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile)
 
         then:
-        def ex = thrown(RegistryPublishException)
+        def ex = thrown(RegistryReleaseException)
         ex.message.startsWith("Unable to connect to plugin repository: ")
         ex.message.contains("failed: Connection refused")
     }
@@ -132,10 +132,10 @@ class RegistryClientTest extends Specification {
         pluginFile.text = "fake plugin content"
 
         when:
-        clientNotfound.publish("test-plugin", "1.0.0", pluginFile)
+        clientNotfound.release("test-plugin", "1.0.0", pluginFile)
 
         then:
-        def ex = thrown(RegistryPublishException)
+        def ex = thrown(RegistryReleaseException)
         ex.message.startsWith('Unable to connect to plugin repository: fake-host.fake-domain-blabla.com')
     }
 
@@ -144,20 +144,20 @@ class RegistryClientTest extends Specification {
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin zip content"
         
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
             .willReturn(aResponse().withStatus(200)))
 
         when:
-        client.publish("my-plugin", "2.1.0", pluginFile)
+        client.release("my-plugin", "2.1.0", pluginFile)
 
         then:
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/publish"))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"id\""))
             .withRequestBody(containing("my-plugin"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
             .withRequestBody(containing("2.1.0"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"file\""))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"artifact\""))
             .withRequestBody(containing("fake plugin zip content")))
     }
 }

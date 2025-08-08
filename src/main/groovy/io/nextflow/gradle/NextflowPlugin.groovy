@@ -1,6 +1,6 @@
 package io.nextflow.gradle
 
-import io.nextflow.gradle.registry.RegistryUploadTask
+import io.nextflow.gradle.registry.RegistryReleaseTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.GroovyPlugin
@@ -124,26 +124,26 @@ class NextflowPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             if (config.publishing) {
-                // track the publish tasks
-                def publishTasks = []
+                // track the release tasks
+                def releaseTasks = []
 
-                // add registry publish task, if configured
+                // add registry release task, if configured
                 if (config.publishing.registry) {
-                    // releasePluginToRegistry - publishes plugin to a plugin registry
-                    project.tasks.register('releasePluginToRegistry', RegistryUploadTask)
+                    // releasePluginToRegistry - releases plugin to a plugin registry
+                    project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
                     project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
-                    publishTasks << project.tasks.releasePluginToRegistry
+                    releaseTasks << project.tasks.releasePluginToRegistry
                 }
 
 
                 // finally, configure the destination-agnostic 'release' task
-                if (!publishTasks.isEmpty()) {
-                    // releasePlugin - all the release/publishing actions
+                if (!releaseTasks.isEmpty()) {
+                    // releasePlugin - all the release actions
                     project.tasks.register('releasePlugin', {
                         group = 'Nextflow Plugin'
                         description = 'Release plugin to configured destination'
                     })
-                    for (task in publishTasks) {
+                    for (task in releaseTasks) {
                         project.tasks.releasePlugin.dependsOn << task
                     }
                 }
