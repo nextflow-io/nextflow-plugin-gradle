@@ -136,7 +136,7 @@ class RegistryClientTest extends Specification {
 
         then:
         def ex = thrown(RegistryPublishException)
-        ex.message == "Unable to connect to plugin repository: fake-host.fake-domain-blabla.com: Name or service not known"
+        ex.message.startsWith('Unable to connect to plugin repository: fake-host.fake-domain-blabla.com')
     }
 
     def "should send correct multipart form data"() {

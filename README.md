@@ -38,7 +38,7 @@ nextflowPlugin {
 
     publishing {
         registry {
-            url = 'https://plugins.nextflow.io/api'
+            url = 'https://registry.nextflow.io/api'
             authToken = project.findProperty('registry_access_token')
         }
     }
