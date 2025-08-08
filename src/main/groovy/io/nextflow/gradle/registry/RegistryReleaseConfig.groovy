@@ -17,7 +17,7 @@ class RegistryReleaseConfig {
      * The registry API base URL.
      * Defaults to the official Nextflow registry.
      */
-    String url = 'https://registry.nextflow.io/api'
+    String url
 
     /**
      * The authentication token (bearer token) for registry access.
@@ -27,5 +27,33 @@ class RegistryReleaseConfig {
 
     RegistryReleaseConfig(Project project) {
         this.project = project
+    }
+
+    /**
+     * Gets the resolved registry URL with fallback to environment variable.
+     * @return the resolved URL or default if not configured
+     */
+    String getResolvedUrl() {
+        return url ?: 
+               project.findProperty('npr.apiUrl') ?: 
+               System.getenv('NPR_API_URL') ?: 
+               'https://registry.nextflow.io/api'
+    }
+
+    /**
+     * Gets the resolved auth token with fallback to environment variable.
+     * @return the resolved auth token
+     * @throws RuntimeException if no auth token is configured
+     */
+    String getResolvedAuthToken() {
+        def token = authToken ?: 
+                    project.findProperty('npr.apiKey') ?: 
+                    System.getenv('NPR_API_KEY')
+        
+        if (!token) {
+            throw new RuntimeException('Registry authentication token must be configured either via authToken property, npr.apiKey project property, or NPR_API_KEY environment variable')
+        }
+        
+        return token
     }
 }

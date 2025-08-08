@@ -27,10 +27,8 @@ class NextflowPluginTest extends Specification {
             className = 'com.example.TestPlugin'
             nextflowVersion = '24.04.0'
             extensionPoints = ['com.example.TestExtension']
-            publishing {
-                registry {
-                    url = 'https://example.com/registry'
-                }
+            registry {
+                url = 'https://example.com/registry'
             }
         }
 
@@ -52,10 +50,8 @@ class NextflowPluginTest extends Specification {
             className = 'com.example.TestPlugin'
             nextflowVersion = '24.04.0'
             extensionPoints = ['com.example.TestExtension']
-            publishing {
-                registry {
-                    url = 'https://example.com/registry'
-                }
+            registry {
+                url = 'https://example.com/registry'
             }
         }
 
@@ -69,7 +65,7 @@ class NextflowPluginTest extends Specification {
     }
 
 
-    def "should not register releasePlugin task when no publishing is configured"() {
+    def "should always register releasePlugin tasks even when no registry is configured"() {
         given:
         project.nextflowPlugin {
             description = 'A test plugin'
@@ -83,7 +79,79 @@ class NextflowPluginTest extends Specification {
         project.evaluate()
 
         then:
-        project.tasks.findByName('releasePlugin') == null
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+        project.tasks.releasePlugin.group == 'Nextflow Plugin'
+        project.tasks.releasePlugin.description == 'Release plugin to configured destination'
+    }
+
+    def "should register releasePlugin tasks when no explicit registry configuration exists"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            // No registry block - should use fallback configuration
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+    }
+
+    def "should create releasePlugin task that works with fallback configuration"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            // No registry block - should use fallback configuration
+        }
+
+        when:
+        project.evaluate()
+        def task = project.tasks.findByName('releasePlugin')
+
+        then:
+        task != null
+        task.group == 'Nextflow Plugin'
+        
+        and: "Other tasks should also exist"
+        project.tasks.findByName('packagePlugin') != null
+        project.tasks.findByName('installPlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+    }
+
+    def "should handle empty registry block and use fallback configuration"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            registry {
+                // completely empty registry block
+            }
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+        
+        and: "Other tasks should also exist"
+        project.tasks.findByName('packagePlugin') != null
+        project.tasks.findByName('installPlugin') != null
     }
 
 }

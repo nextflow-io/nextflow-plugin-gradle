@@ -123,31 +123,16 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.test.dependsOn << project.tasks.assemble
 
         project.afterEvaluate {
-            if (config.publishing) {
-                // track the release tasks
-                def releaseTasks = []
+            // Always create registry release task - it will use fallback configuration if needed
+            project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
+            project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
 
-                // add registry release task, if configured
-                if (config.publishing.registry) {
-                    // releasePluginToRegistry - releases plugin to a plugin registry
-                    project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
-                    project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
-                    releaseTasks << project.tasks.releasePluginToRegistry
-                }
-
-
-                // finally, configure the destination-agnostic 'release' task
-                if (!releaseTasks.isEmpty()) {
-                    // releasePlugin - all the release actions
-                    project.tasks.register('releasePlugin', {
-                        group = 'Nextflow Plugin'
-                        description = 'Release plugin to configured destination'
-                    })
-                    for (task in releaseTasks) {
-                        project.tasks.releasePlugin.dependsOn << task
-                    }
-                }
-            }
+            // Always create the main release task
+            project.tasks.register('releasePlugin', {
+                group = 'Nextflow Plugin'
+                description = 'Release plugin to configured destination'
+            })
+            project.tasks.releasePlugin.dependsOn << project.tasks.releasePluginToRegistry
         }
     }
 

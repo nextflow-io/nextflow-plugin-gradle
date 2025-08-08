@@ -46,9 +46,17 @@ class RegistryReleaseTask extends DefaultTask {
     def run() {
         final version = project.version.toString()
         final plugin = project.extensions.getByType(NextflowPluginConfig)
-        final config = plugin.publishing.registry
+        
+        // Get or create registry configuration
+        def registryConfig
+        if (plugin.registry) {
+            registryConfig = plugin.registry
+        } else {
+            // Create default registry config that will use fallback values
+            registryConfig = new RegistryReleaseConfig(project)
+        }
 
-        def client = new RegistryClient(new URI(config.url), config.authToken)
+        def client = new RegistryClient(new URI(registryConfig.resolvedUrl), registryConfig.resolvedAuthToken)
         client.release(project.name, version, project.file(zipFile))
     }
 }

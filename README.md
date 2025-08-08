@@ -36,19 +36,56 @@ nextflowPlugin {
         'com.example.ExampleFunctions'
     ]
 
-    publishing {
-        registry {
-            url = 'https://registry.nextflow.io/api'
-            authToken = project.findProperty('registry_access_token')
-        }
+    registry {
+        url = 'https://registry.nextflow.io/api'
+        authToken = project.findProperty('registry_access_token')
     }
 }
 ```
 
+### Registry Configuration
+
+The `registry` block is optional and supports several configuration methods:
+
+**Option 1: Explicit configuration**
+```gradle
+registry {
+    url = 'https://registry.nextflow.io/api'
+    authToken = 'your-auth-token'
+}
+```
+
+**Option 2: Using project properties**
+```gradle
+registry {
+    // Uses npr.apiUrl and npr.apiKey project properties as fallbacks
+}
+```
+
+**Option 3: Using environment variables**
+```gradle
+registry {
+    // Uses NPR_API_URL and NPR_API_KEY environment variables as fallbacks
+}
+```
+
+**Option 4: No registry block (uses fallbacks)**
+```gradle
+nextflowPlugin {
+    // ... other configuration ...
+    // No registry block - will use npr.apiUrl/NPR_API_URL and npr.apiKey/NPR_API_KEY
+}
+```
+
+The configuration precedence is: explicit values → project properties → environment variables → defaults.
+
+### Available Tasks
+
 This will add some useful tasks to your Gradle build:
 * `assemble` - Compile the Nextflow plugin code and assemble it into a zip file
 * `installPlugin` - Copy the assembled plugin into your local Nextflow plugins dir
-* `releasePlugin` - Release the assembled plugin to the plugin registry
+* `releasePlugin` - Release the assembled plugin to the plugin registry (always available)
+* `releasePluginToRegistry` - Release the plugin to the configured registry (always available)
 
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle

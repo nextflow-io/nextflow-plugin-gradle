@@ -2,6 +2,7 @@ package io.nextflow.gradle
 
 import com.github.zafarkhaja.semver.Version
 import groovy.transform.CompileStatic
+import io.nextflow.gradle.registry.RegistryReleaseConfig
 import org.gradle.api.Project
 
 /**
@@ -17,6 +18,10 @@ import org.gradle.api.Project
  *     extensionPoints = [
  *         'com.example.ExampleFunctions'
  *     ]
+ *     registry {
+ *         url = 'https://registry.nextflow.io/api'
+ *         authToken = 'my-auth-token'
+ *     }
  * }
  * </pre>
  */
@@ -57,9 +62,9 @@ class NextflowPluginConfig {
     List<String> extensionPoints = []
 
     /**
-     * Configure how the plugin will be released (optional)
+     * Configure registry publishing settings (optional)
      */
-    PluginReleaseConfig publishing
+    RegistryReleaseConfig registry
 
     NextflowPluginConfig(Project project) {
         this.project = project
@@ -87,10 +92,9 @@ class NextflowPluginConfig {
         }
     }
 
-    // initialises the 'publishing' sub-config
-    def publishing(Closure config) {
-        publishing = new PluginReleaseConfig(project)
-        project.configure(publishing, config)
-        publishing.validate()
+    // initialises the 'registry' sub-config
+    def registry(Closure config) {
+        registry = new RegistryReleaseConfig(project)
+        project.configure(registry, config)
     }
 }
