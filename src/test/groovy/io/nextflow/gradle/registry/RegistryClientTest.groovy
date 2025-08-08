@@ -84,8 +84,8 @@ class RegistryClientTest extends Specification {
 
         then:
         def ex = thrown(RegistryReleaseException)
-        ex.message.contains("Failed to publish plugin to registry")
-        ex.message.contains("HTTP Response: HTTP/1.1 400 Bad Request")
+        ex.message.contains("Failed to release plugin to registry http://localhost:")
+        ex.message.contains("HTTP 400")
     }
 
     def "should throw RegistryReleaseException on HTTP error with response body"() {
@@ -103,8 +103,8 @@ class RegistryClientTest extends Specification {
 
         then:
         def ex = thrown(RegistryReleaseException)
-        ex.message.contains("Failed to publish plugin to registry")
-        ex.message.contains("HTTP Response: HTTP/1.1 422 Unprocessable Entity")
+        ex.message.contains("Failed to release plugin to registry http://localhost:")
+        ex.message.contains("HTTP 422")
         ex.message.contains('{"error": "Plugin validation failed"}')
     }
 
@@ -121,8 +121,8 @@ class RegistryClientTest extends Specification {
 
         then:
         def ex = thrown(RegistryReleaseException)
-        ex.message.startsWith("Unable to connect to plugin repository: ")
-        ex.message.contains("failed: Connection refused")
+        ex.message.startsWith("Unable to connect to plugin repository at ")
+        ex.message.contains("Connection refused")
     }
 
     def "should fail when unknown host"(){
@@ -136,7 +136,8 @@ class RegistryClientTest extends Specification {
 
         then:
         def ex = thrown(RegistryReleaseException)
-        ex.message.startsWith('Unable to connect to plugin repository: fake-host.fake-domain-blabla.com')
+        ex.message.startsWith('Unable to connect to plugin repository at ')
+        // Java HTTP client may convert UnknownHostException to ConnectException
     }
 
     def "should send correct multipart form data"() {

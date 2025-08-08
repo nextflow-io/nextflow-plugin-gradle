@@ -2,11 +2,12 @@ package io.nextflow.gradle.registry
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.mime.MultipartEntityBuilder
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.util.EntityUtils
+
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Files
+import java.time.Duration
 
 /**
  * HTTP client for communicating with a Nextflow plugin registry.
@@ -48,33 +49,80 @@ class RegistryClient {
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
     def release(String id, String version, File file) {
-        def req = new HttpPost(url.resolve("v1/plugins/release"))
-        req.addHeader("Authorization", "Bearer ${authToken}")
-        req.setEntity(MultipartEntityBuilder.create()
-            .addTextBody("id", id)
-            .addTextBody("version", version)
-            .addBinaryBody("artifact", file)
-            .build())
+        def client = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .build()
 
-        try (def http = HttpClients.createDefault();
-             def rep = http.execute(req)) {
+        def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
+        def multipartBody = buildMultipartBody(id, version, file, boundary)
 
-            if (rep.statusLine.statusCode != 200) {
-                throw new RegistryReleaseException(getErrorMessage(rep))
+        def requestUri = url.resolve("v1/plugins/release")
+        def request = HttpRequest.newBuilder()
+            .uri(requestUri)
+            .header("Authorization", "Bearer ${authToken}")
+            .header("Content-Type", "multipart/form-data; boundary=${boundary}")
+            .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+            .timeout(Duration.ofMinutes(5))
+            .build()
+
+        try {
+            def response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            
+            if (response.statusCode() != 200) {
+                throw new RegistryReleaseException(getErrorMessage(response, requestUri))
             }
-        } catch (ConnectException | UnknownHostException e) {
-            throw new RegistryReleaseException("Unable to connect to plugin repository: ${e.message}", e)
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt()
+            throw new RegistryReleaseException("Plugin release to ${requestUri} was interrupted: ${e.message}", e)
+        } catch (ConnectException e) {
+            throw new RegistryReleaseException("Unable to connect to plugin repository at ${requestUri}: Connection refused", e)
+        } catch (UnknownHostException | IOException e) {
+            throw new RegistryReleaseException("Unable to connect to plugin repository at ${requestUri}: ${e.message}", e)
         }
     }
 
-    private String getErrorMessage(CloseableHttpResponse rep) {
-        def message = "Failed to publish plugin to registry $url: HTTP Response: ${rep.statusLine}"
-        if( rep.entity ) {
-            final String entityStr = EntityUtils.toString(rep.entity)
-            if (entityStr) {
-                return "$message - $entityStr".toString()
-            }
+    private String getErrorMessage(HttpResponse<String> response, URI requestUri) {
+        def message = "Failed to release plugin to registry ${requestUri}: HTTP ${response.statusCode()}"
+        def body = response.body()
+        if (body && !body.isEmpty()) {
+            return "$message - $body".toString()
         }
         return message.toString()
+    }
+
+    private byte[] buildMultipartBody(String id, String version, File file, String boundary) {
+        def output = new ByteArrayOutputStream()
+        def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
+        def lineEnd = "\r\n"
+        
+        // Add id field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"id\"").append(lineEnd)
+        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
+        writer.append(lineEnd)
+        writer.append(id).append(lineEnd)
+        
+        // Add version field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"version\"").append(lineEnd)
+        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
+        writer.append(lineEnd)
+        writer.append(version).append(lineEnd)
+        
+        // Add file field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"artifact\"; filename=\"${file.name}\"").append(lineEnd)
+        writer.append("Content-Type: application/zip").append(lineEnd)
+        writer.append(lineEnd)
+        writer.flush()
+        
+        // Write file bytes
+        output.write(Files.readAllBytes(file.toPath()))
+        
+        writer.append(lineEnd)
+        writer.append("--${boundary}--").append(lineEnd)
+        writer.close()
+        
+        return output.toByteArray()
     }
 }
