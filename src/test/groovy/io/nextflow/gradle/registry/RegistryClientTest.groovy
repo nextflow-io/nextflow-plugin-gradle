@@ -54,6 +54,7 @@ class RegistryClientTest extends Specification {
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("id"))
             .withRequestBody(containing("version"))
+            .withRequestBody(containing("checksum"))
             .withRequestBody(containing("artifact"))
             .willReturn(aResponse()
                 .withStatus(200)
@@ -158,6 +159,8 @@ class RegistryClientTest extends Specification {
             .withRequestBody(containing("my-plugin"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
             .withRequestBody(containing("2.1.0"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"checksum\""))
+            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"artifact\""))
             .withRequestBody(containing("fake plugin zip content")))
     }

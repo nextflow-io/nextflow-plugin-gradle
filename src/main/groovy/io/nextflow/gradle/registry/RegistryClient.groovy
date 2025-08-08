@@ -7,6 +7,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.time.Duration
 
 /**
@@ -42,6 +43,7 @@ class RegistryClient {
      * 
      * Uploads the plugin zip file along with metadata to the registry
      * using a multipart HTTP POST request to the v1/plugins/release endpoint.
+     * The request includes the plugin ID, version, SHA-512 checksum, and binary artifact.
      * 
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
@@ -95,6 +97,10 @@ class RegistryClient {
         def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
         def lineEnd = "\r\n"
         
+        // Calculate SHA-512 checksum
+        def fileBytes = Files.readAllBytes(file.toPath())
+        def checksum = computeSha512(fileBytes)
+        
         // Add id field
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"id\"").append(lineEnd)
@@ -109,6 +115,13 @@ class RegistryClient {
         writer.append(lineEnd)
         writer.append(version).append(lineEnd)
         
+        // Add checksum field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"checksum\"").append(lineEnd)
+        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
+        writer.append(lineEnd)
+        writer.append("sha512:${checksum}").append(lineEnd)
+        
         // Add file field
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"artifact\"; filename=\"${file.name}\"").append(lineEnd)
@@ -116,13 +129,19 @@ class RegistryClient {
         writer.append(lineEnd)
         writer.flush()
         
-        // Write file bytes
-        output.write(Files.readAllBytes(file.toPath()))
+        // Write file bytes (already read above for checksum)
+        output.write(fileBytes)
         
         writer.append(lineEnd)
         writer.append("--${boundary}--").append(lineEnd)
         writer.close()
         
         return output.toByteArray()
+    }
+
+    private String computeSha512(byte[] data) {
+        def digest = MessageDigest.getInstance("SHA-512")
+        def hash = digest.digest(data)
+        return hash.collect { String.format("%02x", it) }.join('')
     }
 }
