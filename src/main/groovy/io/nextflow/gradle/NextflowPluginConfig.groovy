@@ -70,6 +70,28 @@ class NextflowPluginConfig {
         this.project = project
     }
 
+    private String normalizeVersion(String version) {
+        try {
+            // Normalize Nextflow version format (e.g., "24.04.0" -> "24.4.0") to comply with semver
+            def parts = version.split(/\.|-/, 3)
+            if (parts.length >= 3) {
+                def major = Integer.parseInt(parts[0])
+                def minor = Integer.parseInt(parts[1])
+                def patch = parts[2]
+                def patchParts = patch.split(/-/, 2)
+                def patchNumber = Integer.parseInt(patchParts[0])
+                def normalized = "${major}.${minor}.${patchNumber}"
+                if (patchParts.length > 1) {
+                    normalized += "-${patchParts[1]}"
+                }
+                return normalized
+            }
+        } catch (NumberFormatException e) {
+            // If we can't parse the version, return as-is to let semver validation handle it
+        }
+        return version
+    }
+
     def validate() {
         // check for missing config
         if (!nextflowVersion) {
@@ -80,6 +102,20 @@ class NextflowPluginConfig {
         }
         if (!provider) {
             throw new RuntimeException('nextflowPlugin.provider not specified')
+        }
+        if (provider && !provider.trim()) {
+            throw new RuntimeException('nextflowPlugin.provider cannot be empty')
+        }
+
+        // validate nextflowVersion is valid semver (normalize to handle Nextflow's version format)
+        def normalizedNextflowVersion = normalizeVersion(nextflowVersion)
+        if (!Version.isValid(normalizedNextflowVersion, true)) {
+            throw new RuntimeException("nextflowPlugin.nextflowVersion '${nextflowVersion}' is invalid. Must be a valid semantic version (semver) string")
+        }
+
+        // validate className is valid Java fully qualified class name (must have package)
+        if (!className.matches(/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)+$/)) {
+            throw new RuntimeException("nextflowPlugin.className '${className}' is invalid. Must be a valid Java fully qualified class name with package")
         }
 
         // validate name/id

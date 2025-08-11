@@ -56,7 +56,11 @@ class RegistryReleaseTask extends DefaultTask {
             registryConfig = new RegistryReleaseConfig(project)
         }
 
-        def client = new RegistryClient(new URI(registryConfig.resolvedUrl), registryConfig.resolvedAuthToken)
+        def registryUri = new URI(registryConfig.resolvedUrl)
+        def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
         client.release(project.name, version, project.file(zipFile))
+        
+        // Celebrate successful plugin upload! 🎉
+        project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully uploaded to ${registryUri.host}!")
     }
 }

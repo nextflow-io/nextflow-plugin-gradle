@@ -43,6 +43,17 @@ nextflowPlugin {
 }
 ```
 
+### Configuration Options
+
+The `nextflowPlugin` block supports the following configuration options:
+
+- **`nextflowVersion`** (required) - Specifies the minimum Nextflow version required by the plugin
+- **`className`** (required) - The fully qualified name of the main plugin class
+- **`provider`** (required) - The plugin provider/author name
+- **`description`** (optional) - A short description of the plugin
+- **`requirePlugins`** (optional) - List of plugin dependencies that must be present
+```
+
 ### Registry Configuration
 
 The `registry` block is optional and supports several configuration methods:
@@ -120,13 +131,11 @@ pluginManagement {
 3. Apply the configuration, as described above
 
 
-
 ## Development of Gradle plugin for Nextflow 
 
 To release this plugin include the [Gradle plugins registry](https://plugins.gradle.org) API keys in your `gradle.properties`. 
 
 Then use this command:
-
 
 ```
 ./gradlew publishPlugins
