@@ -61,6 +61,6 @@ class RegistryReleaseTask extends DefaultTask {
         client.release(project.name, version, project.file(zipFile))
         
         // Celebrate successful plugin upload! 🎉
-        project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully uploaded to ${registryUri.host}!")
+        project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
     }
 }
