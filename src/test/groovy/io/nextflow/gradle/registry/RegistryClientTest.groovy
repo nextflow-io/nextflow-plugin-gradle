@@ -42,7 +42,7 @@ class RegistryClientTest extends Specification {
         new RegistryClient(new URI("http://example.com"), null)
         then:
         def ex = thrown(RegistryReleaseException)
-        ex.message == "Authentication token not specified - Provide a valid token in 'publishing.registry' configuration"
+        ex.message == "API key not specified - Provide a valid API key in 'publishing.registry' configuration"
     }
 
     def "should successfully publish plugin"() {
