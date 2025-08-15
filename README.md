@@ -14,7 +14,7 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 
 ```gradle
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '1.0.1-beta4'
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.5'
 }
 
 dependencies {
@@ -35,11 +35,6 @@ nextflowPlugin {
         'com.example.ExampleObserver',
         'com.example.ExampleFunctions'
     ]
-
-    registry {
-        url = 'https://registry.nextflow.io/api'
-        authToken = project.findProperty('registry_access_token')
-    }
 }
 ```
 
