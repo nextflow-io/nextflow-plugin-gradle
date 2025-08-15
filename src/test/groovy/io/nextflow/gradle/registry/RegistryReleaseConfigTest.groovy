@@ -62,9 +62,9 @@ class RegistryReleaseConfigTest extends Specification {
         resolvedUrl == 'https://explicit-registry.com/api'
     }
 
-    def "should use explicit auth token configuration"() {
+    def "should use explicit API key configuration"() {
         given:
-        config.authToken = 'explicit-token'
+        config.apiKey = 'explicit-token'
 
         when:
         def resolvedToken = config.resolvedAuthToken
@@ -73,7 +73,7 @@ class RegistryReleaseConfigTest extends Specification {
         resolvedToken == 'explicit-token'
     }
 
-    def "should use project property for auth token when not explicitly set"() {
+    def "should use project property for API key when not explicitly set"() {
         given:
         project.ext['npr.apiKey'] = 'project-property-token'
 
@@ -84,9 +84,9 @@ class RegistryReleaseConfigTest extends Specification {
         resolvedToken == 'project-property-token'
     }
 
-    def "should prioritize explicit auth token over project property"() {
+    def "should prioritize explicit API key over project property"() {
         given:
-        config.authToken = 'explicit-token'
+        config.apiKey = 'explicit-token'
         project.ext['npr.apiKey'] = 'project-token'
 
         when:
@@ -96,13 +96,13 @@ class RegistryReleaseConfigTest extends Specification {
         resolvedToken == 'explicit-token'
     }
 
-    def "should throw exception when no auth token is configured"() {
+    def "should throw exception when no API key is configured"() {
         when:
         config.resolvedAuthToken
 
         then:
         def ex = thrown(RuntimeException)
-        ex.message.contains('Registry authentication token must be configured')
+        ex.message.contains('Registry API key must be configured')
         ex.message.contains('npr.apiKey project property')
         ex.message.contains('NPR_API_KEY environment variable')
     }

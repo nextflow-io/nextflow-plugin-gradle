@@ -31,7 +31,7 @@ class RegistryClient {
      */
     RegistryClient(URI url, String authToken) {
         if (!authToken)
-            throw new RegistryReleaseException("Authentication token not specified - Provide a valid token in 'publishing.registry' configuration")
+            throw new RegistryReleaseException("API key not specified - Provide a valid API key in 'publishing.registry' configuration")
         this.url = !url.toString().endsWith("/")
             ? URI.create(url.toString() + "/")
             : url

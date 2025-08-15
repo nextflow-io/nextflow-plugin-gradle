@@ -47,7 +47,7 @@ The `nextflowPlugin` block supports the following configuration options:
 - **`provider`** (required) - The plugin provider/author name
 - **`description`** (optional) - A short description of the plugin
 - **`requirePlugins`** (optional) - List of plugin dependencies that must be present
-```
+- **`extensionPoints`** (optional) - List of extension point class names provided by the plugin
 
 ### Registry Configuration
 
@@ -57,30 +57,24 @@ The `registry` block is optional and supports several configuration methods:
 ```gradle
 registry {
     url = 'https://registry.nextflow.io/api'
-    authToken = 'your-auth-token'
+    apiKey = 'your-api-key'
 }
 ```
 
 **Option 2: Using project properties**
-```gradle
-registry {
-    // Uses npr.apiUrl and npr.apiKey project properties as fallbacks
-}
+Define `npr.apiUrl` and `npr.apiKey` in your local `gradle.properties` OR `$HOME/.gradle/gradle.properties`:
+
+```properties
+npr.apiUrl=https://registry.nextflow.io/api
+npr.apiKey=your-api-key
 ```
 
 **Option 3: Using environment variables**
-```gradle
-registry {
-    // Uses NPR_API_URL and NPR_API_KEY environment variables as fallbacks
-}
-```
+Export environment variables in your shell:
 
-**Option 4: No registry block (uses fallbacks)**
-```gradle
-nextflowPlugin {
-    // ... other configuration ...
-    // No registry block - will use npr.apiUrl/NPR_API_URL and npr.apiKey/NPR_API_KEY
-}
+```bash
+export NPR_API_URL=https://registry.nextflow.io/api
+export NPR_API_KEY=your-api-key
 ```
 
 The configuration precedence is: explicit values → project properties → environment variables → defaults.

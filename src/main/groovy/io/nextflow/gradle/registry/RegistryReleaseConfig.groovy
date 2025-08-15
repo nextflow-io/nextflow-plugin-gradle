@@ -20,10 +20,10 @@ class RegistryReleaseConfig {
     String url
 
     /**
-     * The authentication token (bearer token) for registry access.
+     * The API key (bearer token) for registry access.
      * Required for uploading plugins to the registry.
      */
-    String authToken
+    String apiKey
 
     RegistryReleaseConfig(Project project) {
         this.project = project
@@ -41,17 +41,17 @@ class RegistryReleaseConfig {
     }
 
     /**
-     * Gets the resolved auth token with fallback to environment variable.
-     * @return the resolved auth token
-     * @throws RuntimeException if no auth token is configured
+     * Gets the resolved API key with fallback to environment variable.
+     * @return the resolved API key
+     * @throws RuntimeException if no API key is configured
      */
     String getResolvedAuthToken() {
-        def token = authToken ?: 
+        def token = apiKey ?: 
                     project.findProperty('npr.apiKey') ?: 
                     System.getenv('NPR_API_KEY')
         
         if (!token) {
-            throw new RuntimeException('Registry authentication token must be configured either via authToken property, npr.apiKey project property, or NPR_API_KEY environment variable')
+            throw new RuntimeException('Registry API key must be configured either via apiKey property, npr.apiKey project property, or NPR_API_KEY environment variable')
         }
         
         return token

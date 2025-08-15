@@ -53,7 +53,7 @@ class RegistryReleaseTaskTest extends Specification {
         then:
         // Should fail with token configuration error since no fallback token is available
         def ex = thrown(RuntimeException)
-        ex.message.contains('Registry authentication token must be configured')
+        ex.message.contains('Registry API key must be configured')
     }
 
     def "should use default fallback configuration when empty registry block is provided"() {
@@ -75,7 +75,7 @@ class RegistryReleaseTaskTest extends Specification {
         then:
         // Should fail with token configuration error since no fallback token is available
         def ex = thrown(RuntimeException)
-        ex.message.contains('Registry authentication token must be configured')
+        ex.message.contains('Registry API key must be configured')
     }
 
     def "should throw exception when auth token is not configured"() {
@@ -97,7 +97,7 @@ class RegistryReleaseTaskTest extends Specification {
 
         then:
         def ex = thrown(RuntimeException)
-        ex.message.contains('Registry authentication token must be configured')
+        ex.message.contains('Registry API key must be configured')
     }
 
     def "should use fallback configuration when explicit values not set"() {
@@ -110,7 +110,7 @@ class RegistryReleaseTaskTest extends Specification {
             extensionPoints = ['com.example.TestExtension']
             registry {
                 url = 'https://example.com/registry'
-                authToken = 'test-token'
+                apiKey = 'test-token'
             }
         }
 
@@ -133,7 +133,7 @@ class RegistryReleaseTaskTest extends Specification {
             extensionPoints = ['com.example.TestExtension']
             registry {
                 url = 'https://example.com/registry'
-                // No explicit auth token - will fall back to project property
+                // No explicit API key - will fall back to project property
             }
         }
 

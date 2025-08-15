@@ -20,7 +20,7 @@ import org.gradle.api.Project
  *     ]
  *     registry {
  *         url = 'https://registry.nextflow.io/api'
- *         authToken = 'my-auth-token'
+ *         apiKey = 'my-api-key'
  *     }
  * }
  * </pre>
