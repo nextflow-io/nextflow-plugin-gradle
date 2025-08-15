@@ -1,13 +1,10 @@
-on:
-  workflow_dispatch:
+name: Release
 
-  push:
-    branches: [ master ]
-    paths: [ VERSION ]
+on:
+  workflow_call:
 
 jobs:
   release:
-    if: "contains(github.event.head_commit.message, '[release]')"
     runs-on: ubuntu-latest
 
     steps:
