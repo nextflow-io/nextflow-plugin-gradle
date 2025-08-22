@@ -99,8 +99,12 @@ class NextflowPlugin implements Plugin<Project> {
                 deps.indexFile project.files(project.tasks.jar.archiveFile)
             }
         }
+
         // use JUnit 5 platform
         project.test.useJUnitPlatform()
+
+        // sometimes tests depend on the assembled plugin
+        project.tasks.test.dependsOn << project.tasks.assemble
 
         // -----------------------------------
         // Add plugin details to jar manifest
@@ -128,7 +132,6 @@ class NextflowPlugin implements Plugin<Project> {
             project.tasks.jar,
             project.tasks.compileIndexFileGroovy
         ]
-        project.tasks.buildIndex.outputs.cacheIf { true }
 
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
@@ -142,13 +145,14 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.register('installPlugin', PluginInstallTask)
         project.tasks.installPlugin.dependsOn << project.tasks.assemble
 
-        // sometimes tests depend on the assembled plugin
-        project.tasks.test.dependsOn << project.tasks.assemble
-
+        // releasePlugin - publish plugin release to registry
         project.afterEvaluate {
             // Always create registry release task - it will use fallback configuration if needed
             project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
-            project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
+            project.tasks.releasePluginToRegistry.dependsOn << [
+                project.tasks.packagePlugin,
+                project.tasks.buildIndex
+            ]
 
             // Always create the main release task
             project.tasks.register('releasePlugin', {

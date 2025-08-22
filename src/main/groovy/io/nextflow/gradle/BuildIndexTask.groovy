@@ -15,7 +15,7 @@ class BuildIndexTask extends JavaExec {
     final ListProperty<String> extensionPoints
 
     @OutputFile
-    final RegularFileProperty outputFile
+    final RegularFileProperty indexFile
 
     BuildIndexTask() {
         extensionPoints = project.objects.listProperty(String)
@@ -23,18 +23,18 @@ class BuildIndexTask extends JavaExec {
             project.extensions.getByType(NextflowPluginConfig).extensionPoints
         })
 
-        outputFile = project.objects.fileProperty()
-        outputFile.convention(project.layout.buildDirectory.file("resources/main/META-INF/index.json"))
+        indexFile = project.objects.fileProperty()
+        indexFile.convention(project.layout.buildDirectory.file("resources/main/META-INF/index.json"))
 
         getMainClass().set('nextflow.plugin.index.PluginIndexWriter')
 
         project.afterEvaluate {
             setClasspath(project.sourceSets.getByName('indexFile').runtimeClasspath)
-            setArgs([outputFile.get().asFile.toString()] + extensionPoints.get())
+            setArgs([indexFile.get().asFile.toString()] + extensionPoints.get())
         }
 
         doFirst {
-            outputFile.get().asFile.parentFile.mkdirs()
+            indexFile.get().asFile.parentFile.mkdirs()
         }
     }
 }

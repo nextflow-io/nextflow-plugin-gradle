@@ -12,7 +12,7 @@ import java.time.Duration
 
 /**
  * HTTP client for communicating with a Nextflow plugin registry.
- * 
+ *
  * This client handles authentication and multipart form uploads
  * to release plugins to a registry service via REST API.
  */
@@ -24,7 +24,7 @@ class RegistryClient {
 
     /**
      * Creates a new registry client.
-     * 
+     *
      * @param url The base URL of the registry API endpoint
      * @param authToken The bearer token for authentication
      * @throws RegistryReleaseException if authToken is null or empty
@@ -40,23 +40,24 @@ class RegistryClient {
 
     /**
      * Releases a plugin to the registry.
-     * 
+     *
      * Uploads the plugin zip file along with metadata to the registry
      * using a multipart HTTP POST request to the v1/plugins/release endpoint.
      * The request includes the plugin ID, version, SHA-512 checksum, and binary artifact.
-     * 
+     *
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
-     * @param file The plugin zip file to upload
+     * @param indexFile The plugin definitions JSON file
+     * @param archive The plugin zip file to upload
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
-    def release(String id, String version, File file) {
+    def release(String id, String version, File indexFile, File archive) {
         def client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build()
 
         def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
-        def multipartBody = buildMultipartBody(id, version, file, boundary)
+        def multipartBody = buildMultipartBody(id, version, indexFile, archive, boundary)
 
         def requestUri = url.resolve("v1/plugins/release")
         def request = HttpRequest.newBuilder()
@@ -69,7 +70,7 @@ class RegistryClient {
 
         try {
             def response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            
+
             if (response.statusCode() != 200) {
                 throw new RegistryReleaseException(getErrorMessage(response, requestUri))
             }
@@ -92,50 +93,57 @@ class RegistryClient {
         return message.toString()
     }
 
-    private byte[] buildMultipartBody(String id, String version, File file, String boundary) {
+    private byte[] buildMultipartBody(String id, String version, File indexFile, File archive, String boundary) {
         def output = new ByteArrayOutputStream()
         def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
         def lineEnd = "\r\n"
-        
+
         // Calculate SHA-512 checksum
-        def fileBytes = Files.readAllBytes(file.toPath())
-        def checksum = computeSha512(fileBytes)
-        
+        def archiveBytes = Files.readAllBytes(archive.toPath())
+        def checksum = computeSha512(archiveBytes)
+
         // Add id field
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"id\"").append(lineEnd)
         writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
         writer.append(lineEnd)
         writer.append(id).append(lineEnd)
-        
+
         // Add version field
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"version\"").append(lineEnd)
         writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
         writer.append(lineEnd)
         writer.append(version).append(lineEnd)
-        
+
         // Add checksum field
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"checksum\"").append(lineEnd)
         writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
         writer.append(lineEnd)
         writer.append("sha512:${checksum}").append(lineEnd)
-        
-        // Add file field
+
+        // Add definitions field
         writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"artifact\"; filename=\"${file.name}\"").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"definitions\"").append(lineEnd)
+        writer.append("Content-Type: application/json").append(lineEnd)
+        writer.append(indexFile.text).append(lineEnd)
+        writer.append(lineEnd)
+
+        // Add archive field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"artifact\"; filename=\"${archive.name}\"").append(lineEnd)
         writer.append("Content-Type: application/zip").append(lineEnd)
         writer.append(lineEnd)
         writer.flush()
-        
-        // Write file bytes (already read above for checksum)
-        output.write(fileBytes)
-        
+
+        // Write archive bytes (already read above for checksum)
+        output.write(archiveBytes)
+
         writer.append(lineEnd)
         writer.append("--${boundary}--").append(lineEnd)
         writer.close()
-        
+
         return output.toByteArray()
     }
 
