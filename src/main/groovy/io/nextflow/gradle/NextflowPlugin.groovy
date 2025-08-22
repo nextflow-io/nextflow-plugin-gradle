@@ -14,7 +14,9 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
  * A gradle plugin for nextflow plugin projects.
  */
 class NextflowPlugin implements Plugin<Project> {
+
     private static final int JAVA_TOOLCHAIN_VERSION = 21
+
     private static final int JAVA_VERSION = 17
 
     @Override
@@ -58,6 +60,11 @@ class NextflowPlugin implements Plugin<Project> {
             reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
         }
 
+        project.configurations {
+            indexFile
+            indexFileImplementation.extendsFrom(indexFile)
+        }
+
         project.afterEvaluate {
             config.validate()
             final nextflowVersion = config.nextflowVersion
@@ -86,10 +93,18 @@ class NextflowPlugin implements Plugin<Project> {
                 deps.testRuntimeOnly "net.bytebuddy:byte-buddy:1.14.17"
                 deps.testImplementation(testFixtures("io.nextflow:nextflow:${nextflowVersion}"))
                 deps.testImplementation(testFixtures("io.nextflow:nf-commons:${nextflowVersion}"))
+
+                // dependencies for buildIndex task
+                deps.indexFile "io.nextflow:nextflow:${nextflowVersion}"
+                deps.indexFile project.files(project.tasks.jar.archiveFile)
             }
         }
+
         // use JUnit 5 platform
         project.test.useJUnitPlatform()
+
+        // sometimes tests depend on the assembled plugin
+        project.tasks.test.dependsOn << project.tasks.assemble
 
         // -----------------------------------
         // Add plugin details to jar manifest
@@ -107,6 +122,17 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.jar.dependsOn << project.tasks.extensionPoints
         project.tasks.compileTestGroovy.dependsOn << project.tasks.extensionPoints
 
+        // buildIndex - generates an index file of plugin definitions
+        project.sourceSets.create('indexFile') { sourceSet ->
+            sourceSet.compileClasspath += project.configurations.getByName('indexFile')
+            sourceSet.runtimeClasspath += project.configurations.getByName('indexFile')
+        }
+        project.tasks.register('buildIndex', BuildIndexTask)
+        project.tasks.buildIndex.dependsOn << [
+            project.tasks.jar,
+            project.tasks.compileIndexFileGroovy
+        ]
+
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [
@@ -119,13 +145,14 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.register('installPlugin', PluginInstallTask)
         project.tasks.installPlugin.dependsOn << project.tasks.assemble
 
-        // sometimes tests depend on the assembled plugin
-        project.tasks.test.dependsOn << project.tasks.assemble
-
+        // releasePlugin - publish plugin release to registry
         project.afterEvaluate {
             // Always create registry release task - it will use fallback configuration if needed
             project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
-            project.tasks.releasePluginToRegistry.dependsOn << project.tasks.packagePlugin
+            project.tasks.releasePluginToRegistry.dependsOn << [
+                project.tasks.packagePlugin,
+                project.tasks.buildIndex
+            ]
 
             // Always create the main release task
             project.tasks.register('releasePlugin', {

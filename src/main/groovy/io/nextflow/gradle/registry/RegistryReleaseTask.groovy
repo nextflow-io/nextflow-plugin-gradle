@@ -9,7 +9,7 @@ import org.gradle.api.tasks.TaskAction
 
 /**
  * Gradle task for releasing a Nextflow plugin to a registry.
- * 
+ *
  * This task uploads the assembled plugin zip file to a configured registry
  * using the registry's REST API. The plugin zip file is sent as a multipart
  * form request along with the plugin ID and version metadata.
@@ -23,6 +23,9 @@ class RegistryReleaseTask extends DefaultTask {
     @InputFile
     final RegularFileProperty zipFile
 
+    @InputFile
+    final RegularFileProperty indexFile
+
     RegistryReleaseTask() {
         group = 'Nextflow Plugin'
         description = 'Release the assembled plugin to the registry'
@@ -32,21 +35,26 @@ class RegistryReleaseTask extends DefaultTask {
         zipFile.convention(project.provider {
             buildDir.file("distributions/${project.name}-${project.version}.zip")
         })
+
+        indexFile = project.objects.fileProperty()
+        indexFile.convention(project.provider {
+            buildDir.file("resources/main/META-INF/index.json")
+        })
     }
 
     /**
      * Executes the registry release task.
-     * 
+     *
      * This method retrieves the plugin configuration and creates a RegistryClient
      * to upload the plugin zip file to the configured registry endpoint.
-     * 
+     *
      * @throws RegistryReleaseException if the upload fails
      */
     @TaskAction
     def run() {
         final version = project.version.toString()
         final plugin = project.extensions.getByType(NextflowPluginConfig)
-        
+
         // Get or create registry configuration
         def registryConfig
         if (plugin.registry) {
@@ -58,8 +66,8 @@ class RegistryReleaseTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        client.release(project.name, version, project.file(zipFile))
-        
+        client.release(project.name, version, project.file(indexFile), project.file(zipFile))
+
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
     }
