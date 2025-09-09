@@ -51,6 +51,53 @@ class RegistryClient {
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
     def release(String id, String version, File file) {
+        def response = sendReleaseRequest(id, version, file)
+        
+        if (response.statusCode() != 200) {
+            throw new RegistryReleaseException(getErrorMessage(response, url.resolve("v1/plugins/release")))
+        }
+    }
+
+    /**
+     * Releases a plugin to the registry with duplicate handling.
+     * 
+     * Uploads the plugin zip file along with metadata to the registry
+     * using a multipart HTTP POST request to the v1/plugins/release endpoint.
+     * Unlike the regular release method, this handles HTTP 409 "DUPLICATE_PLUGIN"
+     * errors as non-failing conditions.
+     * 
+     * @param id The plugin identifier/name
+     * @param version The plugin version (must be valid semver)
+     * @param file The plugin zip file to upload
+     * @return Map with keys: success (boolean), skipped (boolean), message (String)
+     * @throws RegistryReleaseException if the upload fails for reasons other than duplicates
+     */
+    def releaseIfNotExists(String id, String version, File file) {
+        def response = sendReleaseRequest(id, version, file)
+        
+        if (response.statusCode() == 200) {
+            return [success: true, skipped: false, message: null]
+        }
+        
+        if (response.statusCode() == 409) {
+            // HTTP 409 indicates plugin already exists - treat as non-failing
+            return [success: true, skipped: true, message: response.body()]
+        }
+        
+        // For all other errors, throw exception as usual
+        throw new RegistryReleaseException(getErrorMessage(response, url.resolve("v1/plugins/release")))
+    }
+
+    /**
+     * Sends the HTTP release request to the registry.
+     * 
+     * @param id The plugin identifier/name
+     * @param version The plugin version
+     * @param file The plugin zip file to upload
+     * @return HttpResponse from the registry
+     * @throws RegistryReleaseException if the request fails due to network issues
+     */
+    private HttpResponse<String> sendReleaseRequest(String id, String version, File file) {
         def client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build()
@@ -68,11 +115,7 @@ class RegistryClient {
             .build()
 
         try {
-            def response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            
-            if (response.statusCode() != 200) {
-                throw new RegistryReleaseException(getErrorMessage(response, requestUri))
-            }
+            return client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt()
             throw new RegistryReleaseException("Plugin release to ${requestUri} was interrupted: ${e.message}", e)

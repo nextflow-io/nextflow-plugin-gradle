@@ -1,5 +1,6 @@
 package io.nextflow.gradle
 
+import io.nextflow.gradle.registry.RegistryReleaseIfNotExistsTask
 import io.nextflow.gradle.registry.RegistryReleaseTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -113,6 +114,17 @@ class NextflowPlugin implements Plugin<Project> {
                 description = 'Release plugin to configured destination'
             })
             project.tasks.releasePlugin.dependsOn << project.tasks.releasePluginToRegistry
+
+            // Always create registry release if not exists task - handles duplicates gracefully
+            project.tasks.register('releasePluginToRegistryIfNotExists', RegistryReleaseIfNotExistsTask)
+            project.tasks.releasePluginToRegistryIfNotExists.dependsOn << project.tasks.packagePlugin
+
+            // Always create the main release if not exists task
+            project.tasks.register('releasePluginIfNotExists', {
+                group = 'Nextflow Plugin'
+                description = 'Release plugin to configured destination, skipping if already exists'
+            })
+            project.tasks.releasePluginIfNotExists.dependsOn << project.tasks.releasePluginToRegistryIfNotExists
         }
     }
 
