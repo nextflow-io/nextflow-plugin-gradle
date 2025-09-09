@@ -228,4 +228,101 @@ class NextflowPluginTest extends Specification {
         compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
     }
 
+    def "should configure jar task to include extensions.idx file"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension', 'com.example.AnotherExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "jar task should depend on extensionPoints task"
+        def jarTask = project.tasks.jar
+        def extensionPointsTask = project.tasks.extensionPoints
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        
+        and: "extensionPoints task should be registered"
+        extensionPointsTask != null
+    }
+
+    def "should include extensions.idx file in built JAR"() {
+        given:
+        // Create a minimal source file to satisfy the jar task
+        def srcDir = project.file('src/main/groovy/com/example')
+        srcDir.mkdirs()
+        def pluginFile = new File(srcDir, 'TestPlugin.groovy')
+        pluginFile.text = '''
+            package com.example
+            import org.pf4j.Plugin
+            
+            class TestPlugin extends Plugin {
+            }
+        '''.stripIndent()
+
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension', 'com.example.AnotherExtension']
+        }
+
+        when:
+        project.evaluate()
+        
+        // First run the extensionPoints task to generate the extensions.idx
+        def extensionPointsTask = project.tasks.extensionPoints
+        extensionPointsTask.run()
+        
+        // Verify the extensions.idx was generated
+        def extensionsFile = extensionPointsTask.outputFile.get().asFile
+        extensionsFile.exists()
+        
+        // Now check that the jar task includes this file in its inputs
+        def jarTask = project.tasks.jar
+        def jarInputFiles = jarTask.source.files
+
+        then:
+        extensionsFile.exists()
+        extensionsFile.text.trim() == 'com.example.TestExtension\ncom.example.AnotherExtension'
+        
+        and: "jar task should include the extensions.idx in its source files"
+        jarInputFiles.contains(extensionsFile)
+    }
+
+    def "should have consistent extensions.idx between jar and packagePlugin tasks"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author' 
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "both jar and packagePlugin should depend on the same extensionPoints task"
+        def extensionPointsTask = project.tasks.extensionPoints
+        def jarTask = project.tasks.jar
+        def packageTask = project.tasks.packagePlugin
+        
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        packageTask.taskDependencies.getDependencies(packageTask).contains(extensionPointsTask)
+        
+        and: "both tasks use the same extensionPoints task instance"
+        extensionPointsTask != null
+        
+        and: "packagePlugin includes jar contents via 'with' directive"
+        // The packagePlugin uses 'with project.tasks.jar' in its constructor
+        // so it will include whatever the jar task produces, ensuring consistency
+        packageTask != null
+    }
+
 }

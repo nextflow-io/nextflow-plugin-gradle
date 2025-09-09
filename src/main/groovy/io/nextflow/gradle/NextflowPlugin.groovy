@@ -81,9 +81,11 @@ class NextflowPlugin implements Plugin<Project> {
         // Custom tasks
         // -----------------------------
         // extensionPoints - generates extensions.idx file
-        project.tasks.register('extensionPoints', ExtensionPointsTask)
-        project.tasks.jar.dependsOn << project.tasks.extensionPoints
-        project.tasks.compileTestGroovy.dependsOn << project.tasks.extensionPoints
+        def extensionPointsTask = project.tasks.register('extensionPoints', ExtensionPointsTask)
+        project.tasks.jar.dependsOn << extensionPointsTask
+        // ensure the generated extensions.idx is included in the JAR
+        project.tasks.jar.from(extensionPointsTask.get().outputs)
+        project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
