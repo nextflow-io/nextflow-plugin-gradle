@@ -325,4 +325,48 @@ class NextflowPluginTest extends Specification {
         packageTask != null
     }
 
+    def "should configure jar task to include extensions.idx with correct META-INF path structure"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.S3PathFactory', 'com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+        
+        // Generate extensions.idx to verify path structure
+        def extensionPointsTask = project.tasks.extensionPoints
+        extensionPointsTask.run()
+        
+        // Verify the generated file is in the correct location
+        def extensionsFile = extensionPointsTask.outputFile.get().asFile
+        def jarTask = project.tasks.jar
+
+        then:
+        extensionsFile.exists()
+        extensionsFile.text.contains('com.example.S3PathFactory')
+        extensionsFile.text.contains('com.example.TestExtension')
+        
+        and: "extensions.idx should be generated in build/resources/main/META-INF/ structure"
+        extensionsFile.absolutePath.contains('build/resources/main/META-INF/extensions.idx')
+        
+        and: "jar task should be configured to include the generated resources directory"
+        def jarInputs = jarTask.source.files
+        def buildResourcesMain = project.layout.buildDirectory.dir('resources/main').get().asFile
+        jarInputs.any { it.absolutePath.startsWith(buildResourcesMain.absolutePath) }
+        
+        and: "jar task should depend on extensionPoints task"
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        
+        and: "extensions.idx content should be properly formatted"
+        def lines = extensionsFile.text.trim().split('\n')
+        lines.length == 2
+        lines.contains('com.example.S3PathFactory')
+        lines.contains('com.example.TestExtension')
+    }
+
 }
