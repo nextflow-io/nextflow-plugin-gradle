@@ -48,6 +48,7 @@ The `nextflowPlugin` block supports the following configuration options:
 - **`description`** (optional) - A short description of the plugin
 - **`requirePlugins`** (optional) - List of plugin dependencies that must be present
 - **`extensionPoints`** (optional) - List of extension point class names provided by the plugin
+- **`useDefaultDependencies`** (optional, default: `true`) - Whether to automatically add default dependencies required for Nextflow plugin development
 
 ### Registry Configuration
 
@@ -90,6 +91,50 @@ This will add some useful tasks to your Gradle build:
 You should also ensure that your project's `settings.gradle` declares the plugin name, eg:
 ```gradle
 rootProject.name = '<YOUR-PLUGIN-NAME>'
+```
+
+### Default Dependencies
+
+By default, the plugin automatically adds several dependencies required for Nextflow plugin development. You can disable this behavior by setting `useDefaultDependencies = false` in your plugin configuration.
+
+When `useDefaultDependencies` is `true` (default), the following dependencies are automatically added:
+
+**Compile-time dependencies (compileOnly):**
+- `io.nextflow:nextflow:${nextflowVersion}` - Core Nextflow classes
+- `org.slf4j:slf4j-api:1.7.10` - Logging API
+- `org.pf4j:pf4j:3.4.1` - Plugin framework
+
+**Test dependencies (testImplementation):**
+- `org.apache.groovy:groovy` - Groovy language support
+- `io.nextflow:nextflow:${nextflowVersion}` - Nextflow runtime for testing
+- `org.spockframework:spock-core:2.3-groovy-4.0` - Spock testing framework
+- `org.spockframework:spock-junit4:2.3-groovy-4.0` - Spock JUnit4 integration
+
+**Test runtime dependencies:**
+- `org.objenesis:objenesis:3.4` - Object instantiation library
+- `net.bytebuddy:byte-buddy:1.14.17` - Code generation library
+
+**Test fixtures:**
+- `testFixtures("io.nextflow:nextflow:${nextflowVersion}")` - Nextflow test utilities
+- `testFixtures("io.nextflow:nf-commons:${nextflowVersion}")` - Common test utilities
+
+To disable default dependencies and manage them manually:
+
+```gradle
+nextflowPlugin {
+    nextflowVersion = '25.04.0'
+    provider = 'Example Inc'
+    className = 'com.example.ExamplePlugin'
+    useDefaultDependencies = false
+    
+    // Add your own dependencies in the dependencies block
+}
+
+dependencies {
+    // Your custom dependencies here
+    compileOnly 'io.nextflow:nextflow:25.04.0'
+    // etc...
+}
 ```
 
 ## Migrating an existing Nextflow plugin

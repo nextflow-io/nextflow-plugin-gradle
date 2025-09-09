@@ -154,4 +154,78 @@ class NextflowPluginTest extends Specification {
         project.tasks.findByName('installPlugin') != null
     }
 
+    def "should add default dependencies when useDefaultDependencies is true"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            useDefaultDependencies = true
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' && it.version == '1.7.10' }
+        compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
+
+        and: "test dependencies should be added"
+        def testDeps = project.configurations.testImplementation.dependencies
+        testDeps.find { it.group == 'org.apache.groovy' && it.name == 'groovy' }
+        testDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        testDeps.find { it.group == 'org.spockframework' && it.name == 'spock-core' }
+    }
+
+    def "should not add default dependencies when useDefaultDependencies is false"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            useDefaultDependencies = false
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        !compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' }
+        !compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' }
+        !compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' }
+
+        and: "test dependencies should not be added"
+        def testDeps = project.configurations.testImplementation.dependencies
+        !testDeps.find { it.group == 'org.apache.groovy' && it.name == 'groovy' }
+        !testDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' }
+        !testDeps.find { it.group == 'org.spockframework' && it.name == 'spock-core' }
+    }
+
+    def "should add default dependencies by default when useDefaultDependencies is not specified"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' && it.version == '1.7.10' }
+        compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
+    }
+
 }

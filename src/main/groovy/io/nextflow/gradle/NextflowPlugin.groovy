@@ -62,30 +62,8 @@ class NextflowPlugin implements Plugin<Project> {
             config.validate()
             final nextflowVersion = config.nextflowVersion
 
-            project.dependencies { deps ->
-                // required compile-time dependencies for nextflow plugins
-                deps.compileOnly "io.nextflow:nextflow:${nextflowVersion}"
-                deps.compileOnly "org.slf4j:slf4j-api:1.7.10"
-                deps.compileOnly "org.pf4j:pf4j:3.4.1"
-
-                // see https://docs.gradle.org/4.1/userguide/dependency_management.html#sec:module_replacement
-                deps.modules {
-                    module("commons-logging:commons-logging") { replacedBy("org.slf4j:jcl-over-slf4j") }
-                }
-
-                // test-only dependencies (for writing tests)
-                deps.testImplementation "org.apache.groovy:groovy"
-                deps.testImplementation "io.nextflow:nextflow:${nextflowVersion}"
-                deps.testImplementation("org.spockframework:spock-core:2.3-groovy-4.0") {
-                    exclude group: 'org.apache.groovy'
-                }
-                deps.testImplementation('org.spockframework:spock-junit4:2.3-groovy-4.0') {
-                    exclude group: 'org.apache.groovy'
-                }
-                deps.testRuntimeOnly "org.objenesis:objenesis:3.4"
-                deps.testRuntimeOnly "net.bytebuddy:byte-buddy:1.14.17"
-                deps.testImplementation(testFixtures("io.nextflow:nextflow:${nextflowVersion}"))
-                deps.testImplementation(testFixtures("io.nextflow:nf-commons:${nextflowVersion}"))
+            if (config.useDefaultDependencies) {
+                addDefaultDependencies(project, nextflowVersion)
             }
         }
         // use JUnit 5 platform
@@ -133,6 +111,34 @@ class NextflowPlugin implements Plugin<Project> {
                 description = 'Release plugin to configured destination'
             })
             project.tasks.releasePlugin.dependsOn << project.tasks.releasePluginToRegistry
+        }
+    }
+
+    private void addDefaultDependencies(Project project, String nextflowVersion) {
+        project.dependencies { deps ->
+            // required compile-time dependencies for nextflow plugins
+            deps.compileOnly "io.nextflow:nextflow:${nextflowVersion}"
+            deps.compileOnly "org.slf4j:slf4j-api:1.7.10"
+            deps.compileOnly "org.pf4j:pf4j:3.4.1"
+
+            // see https://docs.gradle.org/4.1/userguide/dependency_management.html#sec:module_replacement
+            deps.modules {
+                module("commons-logging:commons-logging") { replacedBy("org.slf4j:jcl-over-slf4j") }
+            }
+
+            // test-only dependencies (for writing tests)
+            deps.testImplementation "org.apache.groovy:groovy"
+            deps.testImplementation "io.nextflow:nextflow:${nextflowVersion}"
+            deps.testImplementation("org.spockframework:spock-core:2.3-groovy-4.0") {
+                exclude group: 'org.apache.groovy'
+            }
+            deps.testImplementation('org.spockframework:spock-junit4:2.3-groovy-4.0') {
+                exclude group: 'org.apache.groovy'
+            }
+            deps.testRuntimeOnly "org.objenesis:objenesis:3.4"
+            deps.testRuntimeOnly "net.bytebuddy:byte-buddy:1.14.17"
+            deps.testImplementation(testFixtures("io.nextflow:nextflow:${nextflowVersion}"))
+            deps.testImplementation(testFixtures("io.nextflow:nf-commons:${nextflowVersion}"))
         }
     }
 

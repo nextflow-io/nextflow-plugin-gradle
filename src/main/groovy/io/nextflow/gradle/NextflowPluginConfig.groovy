@@ -15,6 +15,7 @@ import org.gradle.api.Project
  *     nextflowVersion = '25.04.0'
  *     publisher = 'nextflow'
  *     className = 'com.example.ExamplePlugin'
+ *     useDefaultDependencies = false  // optional, defaults to true
  *     extensionPoints = [
  *         'com.example.ExampleFunctions'
  *     ]
@@ -60,6 +61,11 @@ class NextflowPluginConfig {
      * List of extension points provided by the plugin.
      */
     List<String> extensionPoints = []
+
+    /**
+     * Whether to automatically add default dependencies (default: true)
+     */
+    boolean useDefaultDependencies = true
 
     /**
      * Configure registry publishing settings (optional)
