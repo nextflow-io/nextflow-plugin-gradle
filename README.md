@@ -1,8 +1,5 @@
 # Gradle plugin for Nextflow
 
-> [!WARNING]
-> This plugin is in early active development, please use `nextflow-io/nf-hello` for production usage for now.
-
 This is a [Gradle](https://gradle.org/) plugin for building [Nextflow](https://www.nextflow.io/) plugins.
 
 It sets up default dependencies required for integration with Nextflow, and adds some custom gradle tasks
@@ -14,7 +11,7 @@ Apply and configure this plugin in your `build.gradle` file, for example:
 
 ```gradle
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.5'
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.9'
 }
 
 dependencies {
