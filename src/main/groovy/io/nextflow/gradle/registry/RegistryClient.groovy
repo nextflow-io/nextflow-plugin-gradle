@@ -127,6 +127,7 @@ class RegistryClient {
         writer.append("--${boundary}").append(lineEnd)
         writer.append("Content-Disposition: form-data; name=\"definitions\"").append(lineEnd)
         writer.append("Content-Type: application/json").append(lineEnd)
+        writer.append(lineEnd)
         writer.append(indexFile.text).append(lineEnd)
         writer.append(lineEnd)
 
