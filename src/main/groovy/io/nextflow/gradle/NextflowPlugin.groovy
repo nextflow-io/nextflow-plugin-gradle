@@ -137,7 +137,8 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [
             project.tasks.extensionPoints,
-            project.tasks.classes
+            project.tasks.classes,
+            project.tasks.buildIndex
         ]
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
@@ -150,8 +151,7 @@ class NextflowPlugin implements Plugin<Project> {
             // Always create registry release task - it will use fallback configuration if needed
             project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)
             project.tasks.releasePluginToRegistry.dependsOn << [
-                project.tasks.packagePlugin,
-                project.tasks.buildIndex
+                project.tasks.packagePlugin
             ]
 
             // Always create the main release task
