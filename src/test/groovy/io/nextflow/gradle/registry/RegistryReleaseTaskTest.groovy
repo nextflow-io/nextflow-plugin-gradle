@@ -34,6 +34,11 @@ class RegistryReleaseTaskTest extends Specification {
         def testZip = tempDir.resolve("test-plugin-1.0.0.zip").toFile()
         testZip.text = "fake plugin content"
         task.zipFile.set(testZip)
+
+        // Set up a test spec file
+        def testSpec = tempDir.resolve("spec.json").toFile()
+        testSpec.text = "fake plugin spec"
+        task.specFile.set(testSpec)
     }
 
     def "should use default fallback configuration when registry is not configured"() {

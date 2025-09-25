@@ -23,6 +23,13 @@ class RegistryReleaseTask extends DefaultTask {
     @InputFile
     final RegularFileProperty zipFile
 
+    /**
+     * The plugin spec file to be uploaded to the registry.
+     * By default, this points to the spec file created by the packagePlugin task.
+     */
+    @InputFile
+    final RegularFileProperty specFile
+
     RegistryReleaseTask() {
         group = 'Nextflow Plugin'
         description = 'Release the assembled plugin to the registry'
@@ -31,6 +38,11 @@ class RegistryReleaseTask extends DefaultTask {
         zipFile = project.objects.fileProperty()
         zipFile.convention(project.provider {
             buildDir.file("distributions/${project.name}-${project.version}.zip")
+        })
+
+        specFile = project.objects.fileProperty()
+        specFile.convention(project.provider {
+            buildDir.file("resources/main/META-INF/spec.json")
         })
     }
 
@@ -58,7 +70,7 @@ class RegistryReleaseTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        client.release(project.name, version, project.file(zipFile), plugin.provider)
+        client.release(project.name, version, project.file(specFile), project.file(zipFile), plugin.provider)
 
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")

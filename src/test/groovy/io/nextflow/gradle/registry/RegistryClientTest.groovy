@@ -27,6 +27,18 @@ class RegistryClientTest extends Specification {
         wireMockServer?.stop()
     }
 
+    def createPluginArchive() {
+        def result = tempDir.resolve("test-plugin.zip").toFile()
+        result.text = "fake plugin zip content"
+        return result
+    }
+
+    def createPluginSpec() {
+        def result = tempDir.resolve("spec.json").toFile()
+        result.text = "fake plugin spec content"
+        return result
+    }
+
     def "should construct client with URL ending in slash"() {
         when:
         def client1 = new RegistryClient(new URI("http://example.com"), "token")
@@ -47,8 +59,8 @@ class RegistryClientTest extends Specification {
 
     def "should successfully publish plugin using two-step process"() {
         given:
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
 
         // Step 1: Create draft release (JSON)
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
@@ -70,7 +82,7 @@ class RegistryClientTest extends Specification {
                 .withBody('{"pluginRelease": {"status": "PUBLISHED"}}')))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
+        client.release("test-plugin", "1.0.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         noExceptionThrown()
@@ -85,15 +97,15 @@ class RegistryClientTest extends Specification {
 
     def "should throw RegistryReleaseException on HTTP error in draft creation without response body"() {
         given:
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
 
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(400)))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
+        client.release("test-plugin", "1.0.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -103,8 +115,8 @@ class RegistryClientTest extends Specification {
 
     def "should throw RegistryReleaseException on HTTP error in draft creation with response body"() {
         given:
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
 
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
@@ -112,7 +124,7 @@ class RegistryClientTest extends Specification {
                 .withBody('{"error": "Plugin validation failed"}')))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
+        client.release("test-plugin", "1.0.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -123,14 +135,14 @@ class RegistryClientTest extends Specification {
 
     def "should fail when connection error"() {
         given:
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
         
         // Stop the server to simulate connection error
         wireMockServer.stop()
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
+        client.release("test-plugin", "1.0.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -141,11 +153,11 @@ class RegistryClientTest extends Specification {
     def "should fail when unknown host"(){
         given:
         def clientNotfound = new RegistryClient(new URI("http://fake-host.fake-domain-blabla.com"), "token")
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
 
         when:
-        clientNotfound.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
+        clientNotfound.release("test-plugin", "1.0.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -155,8 +167,8 @@ class RegistryClientTest extends Specification {
 
     def "should send correct JSON in two-step process"() {
         given:
-        def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
-        pluginFile.text = "fake plugin zip content"
+        def pluginArchive = createPluginArchive()
+        def pluginSpec = createPluginSpec()
 
         // Step 1: Create draft with metadata (JSON)
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
@@ -169,7 +181,7 @@ class RegistryClientTest extends Specification {
             .willReturn(aResponse().withStatus(200)))
 
         when:
-        client.release("my-plugin", "2.1.0", pluginFile, "seqera.io")
+        client.release("my-plugin", "2.1.0", pluginSpec, pluginArchive, "seqera.io")
 
         then:
         // Verify Step 1: draft creation with JSON metadata
@@ -179,6 +191,7 @@ class RegistryClientTest extends Specification {
             .withRequestBody(containing("\"id\":\"my-plugin\""))
             .withRequestBody(containing("\"version\":\"2.1.0\""))
             .withRequestBody(containing("\"checksum\":\"sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c\""))
+            .withRequestBody(containing("\"spec\":\"fake plugin spec content\""))
             .withRequestBody(containing("\"provider\":\"seqera.io\"")))
 
         // Verify Step 2: artifact upload with multipart form data

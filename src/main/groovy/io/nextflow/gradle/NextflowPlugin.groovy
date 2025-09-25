@@ -15,7 +15,9 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
  * A gradle plugin for nextflow plugin projects.
  */
 class NextflowPlugin implements Plugin<Project> {
+
     private static final int JAVA_TOOLCHAIN_VERSION = 21
+
     private static final int JAVA_VERSION = 17
 
     @Override
@@ -59,6 +61,11 @@ class NextflowPlugin implements Plugin<Project> {
             reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
         }
 
+        project.configurations {
+            specFile
+            specFileImplementation.extendsFrom(specFile)
+        }
+
         project.afterEvaluate {
             config.validate()
             final nextflowVersion = config.nextflowVersion
@@ -66,9 +73,19 @@ class NextflowPlugin implements Plugin<Project> {
             if (config.useDefaultDependencies) {
                 addDefaultDependencies(project, nextflowVersion)
             }
+
+            // dependencies for buildSpec task
+            project.dependencies { deps ->
+                deps.specFile "io.nextflow:nextflow:${nextflowVersion}"
+                deps.specFile project.files(project.tasks.jar.archiveFile)
+            }
         }
+
         // use JUnit 5 platform
         project.test.useJUnitPlatform()
+
+        // sometimes tests depend on the assembled plugin
+        project.tasks.test.dependsOn << project.tasks.assemble
 
         // -----------------------------------
         // Add plugin details to jar manifest
@@ -88,11 +105,23 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.jar.from(project.layout.buildDirectory.dir('resources/main'))
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
+        // buildSpec - generates the plugin spec file
+        project.sourceSets.create('specFile') { sourceSet ->
+            sourceSet.compileClasspath += project.configurations.getByName('specFile')
+            sourceSet.runtimeClasspath += project.configurations.getByName('specFile')
+        }
+        project.tasks.register('buildSpec', BuildSpecTask)
+        project.tasks.buildSpec.dependsOn << [
+            project.tasks.jar,
+            project.tasks.compileSpecFileGroovy
+        ]
+
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [
             project.tasks.extensionPoints,
-            project.tasks.classes
+            project.tasks.classes,
+            project.tasks.buildSpec
         ]
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
@@ -100,9 +129,7 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.register('installPlugin', PluginInstallTask)
         project.tasks.installPlugin.dependsOn << project.tasks.assemble
 
-        // sometimes tests depend on the assembled plugin
-        project.tasks.test.dependsOn << project.tasks.assemble
-
+        // releasePlugin - publish plugin release to registry
         project.afterEvaluate {
             // Always create registry release task - it will use fallback configuration if needed
             project.tasks.register('releasePluginToRegistry', RegistryReleaseTask)

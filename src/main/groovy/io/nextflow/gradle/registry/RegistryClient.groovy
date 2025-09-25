@@ -52,19 +52,20 @@ class RegistryClient {
      *
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
-     * @param file The plugin zip file to upload
+     * @param spec The plugin spec JSON file
+     * @param archive The plugin zip file to upload
      * @param provider The plugin provider
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
-    def release(String id, String version, File file, String provider) {
+    def release(String id, String version, File spec, File archive, String provider) {
         log.info("Releasing plugin ${id}@${version} using two-step upload")
 
         // Step 1: Create draft release with metadata
-        def releaseId = createDraftRelease(id, version, file, provider)
+        def releaseId = createDraftRelease(id, version, spec, archive, provider)
         log.debug("Created draft release with ID: ${releaseId}")
 
         // Step 2: Upload artifact and complete the release
-        uploadArtifact(releaseId, file)
+        uploadArtifact(releaseId, archive)
         log.info("Successfully released plugin ${id}@${version}")
     }
 
@@ -76,21 +77,22 @@ class RegistryClient {
      *
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
-     * @param file The plugin zip file to upload
+     * @param spec The plugin spec to upload
+     * @param archive The plugin zip archive to upload
      * @param provider The plugin provider
      * @return Map with keys: success (boolean), skipped (boolean), message (String)
      * @throws RegistryReleaseException if the upload fails for reasons other than duplicates
      */
-    def releaseIfNotExists(String id, String version, File file, String provider) {
+    def releaseIfNotExists(String id, String version, File spec, File archive, String provider) {
         log.info("Releasing plugin ${id}@${version} using two-step upload (if not exists)")
 
         try {
             // Step 1: Create draft release with metadata
-            def releaseId = createDraftRelease(id, version, file, provider)
+            def releaseId = createDraftRelease(id, version, spec, archive, provider)
             log.debug("Created draft release with ID: ${releaseId}")
 
             // Step 2: Upload artifact and complete the release
-            uploadArtifact(releaseId, file)
+            uploadArtifact(releaseId, archive)
             log.info("Successfully released plugin ${id}@${version}")
 
             return [success: true, skipped: false, message: null]
@@ -113,12 +115,13 @@ class RegistryClient {
      *
      * @param id The plugin identifier/name
      * @param version The plugin version
-     * @param file The plugin zip file (used to compute checksum)
+     * @param spec The plugin spec to upload
+     * @param archive The plugin zip archive to upload
      * @param provider The plugin provider
      * @return The draft release ID
      * @throws RegistryReleaseException if the request fails
      */
-    private Long createDraftRelease(String id, String version, File file, String provider) {
+    private Long createDraftRelease(String id, String version, File spec, File archive, String provider) {
         if (!provider) {
             throw new IllegalArgumentException("Plugin provider is required for plugin upload")
         }
@@ -128,14 +131,15 @@ class RegistryClient {
             .build()
 
         // Calculate SHA-512 checksum
-        def fileBytes = Files.readAllBytes(file.toPath())
-        def checksum = computeSha512(fileBytes)
+        def archiveBytes = Files.readAllBytes(archive.toPath())
+        def checksum = computeSha512(archiveBytes)
 
         // Build JSON request body
         def requestBody = [
             id: id,
             version: version,
             checksum: "sha512:${checksum}",
+            spec: spec.text,
             provider: provider
         ]
         def jsonBody = JsonOutput.toJson(requestBody)
@@ -176,16 +180,16 @@ class RegistryClient {
      * and publish it to the registry.
      *
      * @param releaseId The draft release ID from Step 1
-     * @param file The plugin zip file to upload
+     * @param archive The plugin zip archive to upload
      * @throws RegistryReleaseException if the upload fails
      */
-    private void uploadArtifact(Long releaseId, File file) {
+    private void uploadArtifact(Long releaseId, File archive) {
         def client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build()
 
         def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
-        def multipartBody = buildArtifactUploadBody(file, boundary)
+        def multipartBody = buildArtifactUploadBody(archive, boundary)
 
         def requestUri = URI.create(url.toString() + "v1/plugins/release/${releaseId}/upload")
         def request = HttpRequest.newBuilder()
@@ -224,27 +228,25 @@ class RegistryClient {
     /**
      * Builds multipart body for Step 2 (artifact upload only).
      *
-     * @param file The plugin zip file to upload
+     * @param archive The plugin zip archive to upload
      * @param boundary The multipart boundary string
      * @return Multipart body as byte array
      */
-    private byte[] buildArtifactUploadBody(File file, String boundary) {
+    private byte[] buildArtifactUploadBody(File archive, String boundary) {
         def output = new ByteArrayOutputStream()
         def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
         def lineEnd = "\r\n"
 
-        // Read file bytes
-        def fileBytes = Files.readAllBytes(file.toPath())
-
-        // Add file field (changed from "artifact" to "payload" per API spec)
+        // Add archive field (changed from "artifact" to "payload" per API spec)
         writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"payload\"; filename=\"${file.name}\"").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"payload\"; filename=\"${archive.name}\"").append(lineEnd)
         writer.append("Content-Type: application/zip").append(lineEnd)
         writer.append(lineEnd)
         writer.flush()
 
-        // Write file bytes
-        output.write(fileBytes)
+        // Write archive bytes
+        def archiveBytes = Files.readAllBytes(archive.toPath())
+        output.write(archiveBytes)
 
         writer.append(lineEnd)
         writer.append("--${boundary}--").append(lineEnd)
