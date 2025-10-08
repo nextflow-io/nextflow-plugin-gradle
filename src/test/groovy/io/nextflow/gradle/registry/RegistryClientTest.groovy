@@ -45,38 +45,48 @@ class RegistryClientTest extends Specification {
         ex.message == "API key not specified - Provide a valid API key in 'publishing.registry' configuration"
     }
 
-    def "should successfully publish plugin"() {
+    def "should successfully publish plugin using two-step process"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
-        
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
+
+        // Step 1: Create draft release
+        wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("id"))
             .withRequestBody(containing("version"))
             .withRequestBody(containing("checksum"))
-            .withRequestBody(containing("artifact"))
             .willReturn(aResponse()
                 .withStatus(200)
-                .withBody('{"status": "success"}')))
+                .withBody('{"releaseId": 123, "pluginRelease": {"status": "DRAFT"}}')))
+
+        // Step 2: Upload artifact
+        wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
+            .withHeader("Authorization", equalTo("Bearer test-token"))
+            .withRequestBody(containing("payload"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody('{"pluginRelease": {"status": "PUBLISHED"}}')))
 
         when:
         client.release("test-plugin", "1.0.0", pluginFile)
 
         then:
         noExceptionThrown()
-        
+
         and:
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/release"))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release"))
+            .withHeader("Authorization", equalTo("Bearer test-token")))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release/123/upload"))
             .withHeader("Authorization", equalTo("Bearer test-token")))
     }
 
-    def "should throw RegistryReleaseException on HTTP error without response body"() {
+    def "should throw RegistryReleaseException on HTTP error in draft creation without response body"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
-        
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
+
+        wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(400)))
 
@@ -89,12 +99,12 @@ class RegistryClientTest extends Specification {
         ex.message.contains("HTTP 400")
     }
 
-    def "should throw RegistryReleaseException on HTTP error with response body"() {
+    def "should throw RegistryReleaseException on HTTP error in draft creation with response body"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
-        
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
+
+        wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(422)
                 .withBody('{"error": "Plugin validation failed"}')))
@@ -141,27 +151,39 @@ class RegistryClientTest extends Specification {
         // Java HTTP client may convert UnknownHostException to ConnectException
     }
 
-    def "should send correct multipart form data"() {
+    def "should send correct multipart form data in two-step process"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin zip content"
-        
-        wireMockServer.stubFor(post(urlEqualTo("/v1/plugins/release"))
+
+        // Step 1: Create draft with metadata
+        wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody('{"releaseId": 456}')))
+
+        // Step 2: Upload artifact
+        wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
             .willReturn(aResponse().withStatus(200)))
 
         when:
         client.release("my-plugin", "2.1.0", pluginFile)
 
         then:
-        wireMockServer.verify(postRequestedFor(urlEqualTo("/v1/plugins/release"))
+        // Verify Step 1: draft creation with metadata only
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"id\""))
             .withRequestBody(containing("my-plugin"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
             .withRequestBody(containing("2.1.0"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"checksum\""))
-            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"artifact\""))
+            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c")))
+
+        // Verify Step 2: artifact upload
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release/456/upload"))
+            .withHeader("Authorization", equalTo("Bearer test-token"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"payload\""))
             .withRequestBody(containing("fake plugin zip content")))
     }
 }
