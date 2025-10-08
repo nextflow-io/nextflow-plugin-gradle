@@ -1,13 +1,13 @@
 package io.nextflow.gradle
 
-
 import org.gradle.api.tasks.Sync
 
 /**
  * Gradle task which 'installs' (copies) this Nextflow plugin into
  * the local Nextflow plugins dir.
  */
-class PluginInstallTask extends Sync {
+abstract class PluginInstallTask extends Sync {
+
     PluginInstallTask() {
         group = 'Nextflow Plugin'
         description = 'Install this plugin into your local Nextflow plugins dir'
