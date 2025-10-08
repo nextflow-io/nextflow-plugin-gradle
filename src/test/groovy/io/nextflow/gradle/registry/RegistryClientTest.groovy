@@ -50,17 +50,18 @@ class RegistryClientTest extends Specification {
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin content"
 
-        // Step 1: Create draft release
+        // Step 1: Create draft release (JSON)
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
-            .withRequestBody(containing("id"))
-            .withRequestBody(containing("version"))
-            .withRequestBody(containing("checksum"))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(containing("\"id\""))
+            .withRequestBody(containing("\"version\""))
+            .withRequestBody(containing("\"checksum\""))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withBody('{"releaseId": 123, "pluginRelease": {"status": "DRAFT"}}')))
 
-        // Step 2: Upload artifact
+        // Step 2: Upload artifact (multipart)
         wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("payload"))
@@ -76,7 +77,8 @@ class RegistryClientTest extends Specification {
 
         and:
         wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release"))
-            .withHeader("Authorization", equalTo("Bearer test-token")))
+            .withHeader("Authorization", equalTo("Bearer test-token"))
+            .withHeader("Content-Type", equalTo("application/json")))
         wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release/123/upload"))
             .withHeader("Authorization", equalTo("Bearer test-token")))
     }
@@ -151,18 +153,18 @@ class RegistryClientTest extends Specification {
         // Java HTTP client may convert UnknownHostException to ConnectException
     }
 
-    def "should send correct multipart form data in two-step process"() {
+    def "should send correct JSON in two-step process"() {
         given:
         def pluginFile = tempDir.resolve("test-plugin.zip").toFile()
         pluginFile.text = "fake plugin zip content"
 
-        // Step 1: Create draft with metadata
+        // Step 1: Create draft with metadata (JSON)
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withBody('{"releaseId": 456}')))
 
-        // Step 2: Upload artifact
+        // Step 2: Upload artifact (multipart)
         wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
             .willReturn(aResponse().withStatus(200)))
 
@@ -170,19 +172,16 @@ class RegistryClientTest extends Specification {
         client.release("my-plugin", "2.1.0", pluginFile, "seqera.io")
 
         then:
-        // Verify Step 1: draft creation with metadata only
+        // Verify Step 1: draft creation with JSON metadata
         wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"id\""))
-            .withRequestBody(containing("my-plugin"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
-            .withRequestBody(containing("2.1.0"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"checksum\""))
-            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c"))
-            .withRequestBody(containing("Content-Disposition: form-data; name=\"provider\""))
-            .withRequestBody(containing("seqera.io")))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(containing("\"id\":\"my-plugin\""))
+            .withRequestBody(containing("\"version\":\"2.1.0\""))
+            .withRequestBody(containing("\"checksum\":\"sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c\""))
+            .withRequestBody(containing("\"provider\":\"seqera.io\"")))
 
-        // Verify Step 2: artifact upload
+        // Verify Step 2: artifact upload with multipart form data
         wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release/456/upload"))
             .withHeader("Authorization", equalTo("Bearer test-token"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"payload\""))

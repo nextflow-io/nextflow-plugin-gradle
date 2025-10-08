@@ -1,5 +1,6 @@
 package io.nextflow.gradle.registry
 
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -118,19 +119,33 @@ class RegistryClient {
      * @throws RegistryReleaseException if the request fails
      */
     private Long createDraftRelease(String id, String version, File file, String provider) {
+        if (!provider) {
+            throw new IllegalArgumentException("Plugin provider is required for plugin upload")
+        }
+
         def client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build()
 
-        def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
-        def multipartBody = buildDraftMetadataBody(id, version, file, provider, boundary)
+        // Calculate SHA-512 checksum
+        def fileBytes = Files.readAllBytes(file.toPath())
+        def checksum = computeSha512(fileBytes)
+
+        // Build JSON request body
+        def requestBody = [
+            id: id,
+            version: version,
+            checksum: "sha512:${checksum}",
+            provider: provider
+        ]
+        def jsonBody = JsonOutput.toJson(requestBody)
 
         def requestUri = URI.create(url.toString() + "v1/plugins/release")
         def request = HttpRequest.newBuilder()
             .uri(requestUri)
             .header("Authorization", "Bearer ${authToken}")
-            .header("Content-Type", "multipart/form-data; boundary=${boundary}")
-            .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
             .timeout(Duration.ofMinutes(1))
             .build()
 
@@ -204,64 +219,6 @@ class RegistryClient {
             return "$message - $body".toString()
         }
         return message.toString()
-    }
-
-    /**
-     * Builds multipart body for Step 1 (draft creation with metadata only).
-     *
-     * @param id The plugin identifier
-     * @param version The plugin version
-     * @param file The plugin file (used to compute checksum)
-     * @param provider The plugin provider
-     * @param boundary The multipart boundary string
-     * @return Multipart body as byte array
-     */
-    private byte[] buildDraftMetadataBody(String id, String version, File file, String provider, String boundary) {
-        if (!provider) {
-            throw new IllegalArgumentException("Plugin provider is required for plugin upload")
-        }
-
-        def output = new ByteArrayOutputStream()
-        def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
-        def lineEnd = "\r\n"
-
-        // Calculate SHA-512 checksum
-        def fileBytes = Files.readAllBytes(file.toPath())
-        def checksum = computeSha512(fileBytes)
-
-        // Add id field
-        writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"id\"").append(lineEnd)
-        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
-        writer.append(lineEnd)
-        writer.append(id).append(lineEnd)
-
-        // Add version field
-        writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"version\"").append(lineEnd)
-        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
-        writer.append(lineEnd)
-        writer.append(version).append(lineEnd)
-
-        // Add checksum field
-        writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"checksum\"").append(lineEnd)
-        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
-        writer.append(lineEnd)
-        writer.append("sha512:${checksum}").append(lineEnd)
-
-        // Add provider field
-        writer.append("--${boundary}").append(lineEnd)
-        writer.append("Content-Disposition: form-data; name=\"provider\"").append(lineEnd)
-        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
-        writer.append(lineEnd)
-        writer.append(provider).append(lineEnd)
-
-        // End boundary
-        writer.append("--${boundary}--").append(lineEnd)
-        writer.close()
-
-        return output.toByteArray()
     }
 
     /**
