@@ -61,7 +61,7 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        def result = client.releaseIfNotExists(project.name, version, project.file(zipFile)) as Map<String, Object>
+        def result = client.releaseIfNotExists(project.name, version, project.file(zipFile), plugin.provider) as Map<String, Object>
         
         if (result.skipped as Boolean) {
             // Plugin already exists - log info message and continue

@@ -46,7 +46,7 @@ class RegistryReleaseTask extends DefaultTask {
     def run() {
         final version = project.version.toString()
         final plugin = project.extensions.getByType(NextflowPluginConfig)
-        
+
         // Get or create registry configuration
         def registryConfig
         if (plugin.registry) {
@@ -58,8 +58,8 @@ class RegistryReleaseTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        client.release(project.name, version, project.file(zipFile))
-        
+        client.release(project.name, version, project.file(zipFile), plugin.provider)
+
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
     }

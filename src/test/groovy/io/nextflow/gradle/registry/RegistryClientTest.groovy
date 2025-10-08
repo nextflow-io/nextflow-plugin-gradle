@@ -19,7 +19,7 @@ class RegistryClientTest extends Specification {
     def setup() {
         wireMockServer = new WireMockServer(wireMockConfig().port(0))
         wireMockServer.start()
-        def baseUrl = "http://localhost:${wireMockServer.port()}"
+        def baseUrl = "http://localhost:${wireMockServer.port()}/api"
         client = new RegistryClient(new URI(baseUrl), "test-token")
     }
 
@@ -69,7 +69,7 @@ class RegistryClientTest extends Specification {
                 .withBody('{"pluginRelease": {"status": "PUBLISHED"}}')))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
 
         then:
         noExceptionThrown()
@@ -91,7 +91,7 @@ class RegistryClientTest extends Specification {
                 .withStatus(400)))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -110,7 +110,7 @@ class RegistryClientTest extends Specification {
                 .withBody('{"error": "Plugin validation failed"}')))
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -128,7 +128,7 @@ class RegistryClientTest extends Specification {
         wireMockServer.stop()
 
         when:
-        client.release("test-plugin", "1.0.0", pluginFile)
+        client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -143,7 +143,7 @@ class RegistryClientTest extends Specification {
         pluginFile.text = "fake plugin content"
 
         when:
-        clientNotfound.release("test-plugin", "1.0.0", pluginFile)
+        clientNotfound.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
 
         then:
         def ex = thrown(RegistryReleaseException)
@@ -167,7 +167,7 @@ class RegistryClientTest extends Specification {
             .willReturn(aResponse().withStatus(200)))
 
         when:
-        client.release("my-plugin", "2.1.0", pluginFile)
+        client.release("my-plugin", "2.1.0", pluginFile, "seqera.io")
 
         then:
         // Verify Step 1: draft creation with metadata only
@@ -178,7 +178,9 @@ class RegistryClientTest extends Specification {
             .withRequestBody(containing("Content-Disposition: form-data; name=\"version\""))
             .withRequestBody(containing("2.1.0"))
             .withRequestBody(containing("Content-Disposition: form-data; name=\"checksum\""))
-            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c")))
+            .withRequestBody(containing("sha512:35ab27d09f1bc0d4a73b38fbd020064996fb013e2f92d3dd36bda7364765c229e90e0213fcd90c56fc4c9904e259c482cfaacb22dab327050d7d52229eb1a73c"))
+            .withRequestBody(containing("Content-Disposition: form-data; name=\"provider\""))
+            .withRequestBody(containing("seqera.io")))
 
         // Verify Step 2: artifact upload
         wireMockServer.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release/456/upload"))

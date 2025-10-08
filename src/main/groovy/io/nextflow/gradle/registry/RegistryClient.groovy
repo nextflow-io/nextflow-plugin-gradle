@@ -46,19 +46,20 @@ class RegistryClient {
     /**
      * Releases a plugin to the registry using the two-step upload process.
      *
-     * Step 1: Creates a draft release with metadata (id, version, checksum)
+     * Step 1: Creates a draft release with metadata (id, version, checksum, provider)
      * Step 2: Uploads the artifact binary and completes the release
      *
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
      * @param file The plugin zip file to upload
+     * @param provider The plugin provider
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
-    def release(String id, String version, File file) {
+    def release(String id, String version, File file, String provider) {
         log.info("Releasing plugin ${id}@${version} using two-step upload")
 
         // Step 1: Create draft release with metadata
-        def releaseId = createDraftRelease(id, version, file)
+        def releaseId = createDraftRelease(id, version, file, provider)
         log.debug("Created draft release with ID: ${releaseId}")
 
         // Step 2: Upload artifact and complete the release
@@ -75,15 +76,16 @@ class RegistryClient {
      * @param id The plugin identifier/name
      * @param version The plugin version (must be valid semver)
      * @param file The plugin zip file to upload
+     * @param provider The plugin provider
      * @return Map with keys: success (boolean), skipped (boolean), message (String)
      * @throws RegistryReleaseException if the upload fails for reasons other than duplicates
      */
-    def releaseIfNotExists(String id, String version, File file) {
+    def releaseIfNotExists(String id, String version, File file, String provider) {
         log.info("Releasing plugin ${id}@${version} using two-step upload (if not exists)")
 
         try {
             // Step 1: Create draft release with metadata
-            def releaseId = createDraftRelease(id, version, file)
+            def releaseId = createDraftRelease(id, version, file, provider)
             log.debug("Created draft release with ID: ${releaseId}")
 
             // Step 2: Upload artifact and complete the release
@@ -105,24 +107,25 @@ class RegistryClient {
     /**
      * Step 1: Creates a draft release with metadata only.
      *
-     * Sends plugin metadata (id, version, checksum) to create a draft release
+     * Sends plugin metadata (id, version, checksum, provider) to create a draft release
      * and returns the release ID for use in Step 2.
      *
      * @param id The plugin identifier/name
      * @param version The plugin version
      * @param file The plugin zip file (used to compute checksum)
+     * @param provider The plugin provider
      * @return The draft release ID
      * @throws RegistryReleaseException if the request fails
      */
-    private Long createDraftRelease(String id, String version, File file) {
+    private Long createDraftRelease(String id, String version, File file, String provider) {
         def client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build()
 
         def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
-        def multipartBody = buildDraftMetadataBody(id, version, file, boundary)
+        def multipartBody = buildDraftMetadataBody(id, version, file, provider, boundary)
 
-        def requestUri = url.resolve("api/v1/plugins/release")
+        def requestUri = URI.create(url.toString() + "v1/plugins/release")
         def request = HttpRequest.newBuilder()
             .uri(requestUri)
             .header("Authorization", "Bearer ${authToken}")
@@ -169,7 +172,7 @@ class RegistryClient {
         def boundary = "----FormBoundary" + UUID.randomUUID().toString().replace("-", "")
         def multipartBody = buildArtifactUploadBody(file, boundary)
 
-        def requestUri = url.resolve("api/v1/plugins/release/${releaseId}/upload")
+        def requestUri = URI.create(url.toString() + "v1/plugins/release/${releaseId}/upload")
         def request = HttpRequest.newBuilder()
             .uri(requestUri)
             .header("Authorization", "Bearer ${authToken}")
@@ -209,10 +212,15 @@ class RegistryClient {
      * @param id The plugin identifier
      * @param version The plugin version
      * @param file The plugin file (used to compute checksum)
+     * @param provider The plugin provider
      * @param boundary The multipart boundary string
      * @return Multipart body as byte array
      */
-    private byte[] buildDraftMetadataBody(String id, String version, File file, String boundary) {
+    private byte[] buildDraftMetadataBody(String id, String version, File file, String provider, String boundary) {
+        if (!provider) {
+            throw new IllegalArgumentException("Plugin provider is required for plugin upload")
+        }
+
         def output = new ByteArrayOutputStream()
         def writer = new PrintWriter(new OutputStreamWriter(output, "UTF-8"), true)
         def lineEnd = "\r\n"
@@ -241,6 +249,13 @@ class RegistryClient {
         writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
         writer.append(lineEnd)
         writer.append("sha512:${checksum}").append(lineEnd)
+
+        // Add provider field
+        writer.append("--${boundary}").append(lineEnd)
+        writer.append("Content-Disposition: form-data; name=\"provider\"").append(lineEnd)
+        writer.append("Content-Type: text/plain; charset=UTF-8").append(lineEnd)
+        writer.append(lineEnd)
+        writer.append(provider).append(lineEnd)
 
         // End boundary
         writer.append("--${boundary}--").append(lineEnd)
