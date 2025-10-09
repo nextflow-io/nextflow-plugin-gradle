@@ -88,6 +88,18 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.jar.from(project.layout.buildDirectory.dir('resources/main'))
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
+        // configMetadata - generates JSON metadata from @Description annotations
+        def configMetadataTask = project.tasks.register('configMetadata', ConfigMetadataTask) { task ->
+            task.dependsOn(project.tasks.compileGroovy)
+            // Wire the configPackages from the plugin configuration
+            task.configPackages.convention(project.provider {
+                project.extensions.getByType(NextflowPluginConfig).configPackages
+            })
+        }
+        project.tasks.jar.dependsOn << configMetadataTask
+        // ensure the generated metadata files are included in the JAR
+        project.tasks.jar.from(project.layout.buildDirectory.dir('generated/resources'))
+
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [

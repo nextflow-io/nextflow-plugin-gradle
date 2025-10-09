@@ -1,3 +1,10 @@
+1.0.0-beta.11 - 9 Oct 2025
+- Add ConfigMetadataTask to generate schema-compliant JSON metadata from @Description annotations
+- Add configPackages configuration option to NextflowPluginConfig
+- Automatically generate and include configuration metadata in plugin JARs as META-INF/plugin.json
+- Support for @Description, @ConfigOption, and @ScopeName annotations
+- Generated JSON conforms to Nextflow plugin schema v1
+
 1.0.0-beta.10 - 8 Oct 2025
 - Add CLAUDE.md documentation for AI-assisted development
 - Update RegistryClient to use JSON POST for createRelease endpoint

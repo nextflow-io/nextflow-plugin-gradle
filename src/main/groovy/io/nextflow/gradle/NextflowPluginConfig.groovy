@@ -68,6 +68,12 @@ class NextflowPluginConfig {
     boolean useDefaultDependencies = true
 
     /**
+     * List of package names to scan for configuration classes with @Description annotations.
+     * If empty, all packages will be scanned (optional).
+     */
+    List<String> configPackages = []
+
+    /**
      * Configure registry publishing settings (optional)
      */
     RegistryReleaseConfig registry
