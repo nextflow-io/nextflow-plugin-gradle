@@ -59,7 +59,7 @@ class RegistryClientTest extends Specification {
             .withRequestBody(containing("\"checksum\""))
             .willReturn(aResponse()
                 .withStatus(200)
-                .withBody('{"releaseId": 123, "pluginRelease": {"status": "DRAFT"}}')))
+                .withBody('{"releaseId": 123, "pluginRelease": {"version": "1.0.0", "url": "https://example.com/plugin.zip", "date": "2024-01-01T00:00:00Z", "sha512sum": "abc123", "requires": ">=21.0.0", "dependsOn": [], "downloadCount": 0, "downloadGhCount": 0}}')))
 
         // Step 2: Upload artifact (multipart)
         wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
@@ -67,7 +67,7 @@ class RegistryClientTest extends Specification {
             .withRequestBody(containing("payload"))
             .willReturn(aResponse()
                 .withStatus(200)
-                .withBody('{"pluginRelease": {"status": "PUBLISHED"}}')))
+                .withBody('{"pluginRelease": {"version": "1.0.0", "url": "https://example.com/plugin.zip", "date": "2024-01-01T00:00:00Z", "sha512sum": "abc123", "requires": ">=21.0.0", "dependsOn": [], "downloadCount": 0, "downloadGhCount": 0}}')))
 
         when:
         client.release("test-plugin", "1.0.0", pluginFile, "seqera.io")
@@ -162,7 +162,7 @@ class RegistryClientTest extends Specification {
         wireMockServer.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
             .willReturn(aResponse()
                 .withStatus(200)
-                .withBody('{"releaseId": 456}')))
+                .withBody('{"releaseId": 456, "pluginRelease": {"version": "2.1.0", "url": "https://example.com/plugin.zip", "date": "2024-01-01T00:00:00Z", "sha512sum": "abc123", "requires": ">=21.0.0", "dependsOn": [], "downloadCount": 0, "downloadGhCount": 0}}')))
 
         // Step 2: Upload artifact (multipart)
         wireMockServer.stubFor(post(urlMatching("/api/v1/plugins/release/.*/upload"))
