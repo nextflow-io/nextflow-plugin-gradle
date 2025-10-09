@@ -61,9 +61,15 @@ class NextflowPlugin implements Plugin<Project> {
             reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
         }
 
-        project.configurations {
-            specFile
-            specFileImplementation.extendsFrom(specFile)
+        // Create specFile source set early so configurations are available
+        if( config.buildSpec ) {
+            project.configurations.create('specFile')
+            if (!project.sourceSets.findByName('specFile')) {
+                project.sourceSets.create('specFile') { sourceSet ->
+                    sourceSet.compileClasspath += project.configurations.getByName('specFile')
+                    sourceSet.runtimeClasspath += project.configurations.getByName('specFile')
+                }
+            }
         }
 
         project.afterEvaluate {
@@ -75,9 +81,11 @@ class NextflowPlugin implements Plugin<Project> {
             }
 
             // dependencies for buildSpec task
-            project.dependencies { deps ->
-                deps.specFile "io.nextflow:nextflow:${nextflowVersion}"
-                deps.specFile project.files(project.tasks.jar.archiveFile)
+            if( config.buildSpec ) {
+                project.dependencies { deps ->
+                    deps.specFile "io.nextflow:nextflow:${nextflowVersion}"
+                    deps.specFile project.files(project.tasks.jar.archiveFile)
+                }
             }
         }
 
@@ -106,23 +114,22 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
         // buildSpec - generates the plugin spec file
-        project.sourceSets.create('specFile') { sourceSet ->
-            sourceSet.compileClasspath += project.configurations.getByName('specFile')
-            sourceSet.runtimeClasspath += project.configurations.getByName('specFile')
+        if( config.buildSpec ) {
+            project.tasks.register('buildSpec', BuildSpecTask)
+            project.tasks.buildSpec.dependsOn << [
+                project.tasks.jar,
+                project.tasks.compileSpecFileGroovy
+            ]
         }
-        project.tasks.register('buildSpec', BuildSpecTask)
-        project.tasks.buildSpec.dependsOn << [
-            project.tasks.jar,
-            project.tasks.compileSpecFileGroovy
-        ]
 
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [
             project.tasks.extensionPoints,
-            project.tasks.classes,
-            project.tasks.buildSpec
+            project.tasks.classes
         ]
+        if( config.buildSpec )
+            project.tasks.packagePlugin.dependsOn << project.tasks.buildSpec
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
         // installPlugin - installs plugin to (local) nextflow plugins dir

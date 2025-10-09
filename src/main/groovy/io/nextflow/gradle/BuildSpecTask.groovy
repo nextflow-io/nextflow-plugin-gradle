@@ -11,7 +11,7 @@ import org.gradle.api.tasks.OutputFile
  *
  * @author Ben Sherman <bentshermann@gmail.com>
  */
-class BuildSpecTask extends JavaExec {
+abstract class BuildSpecTask extends JavaExec {
 
     @Input
     final ListProperty<String> extensionPoints
