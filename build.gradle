@@ -19,7 +19,8 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     implementation 'org.apache.httpcomponents:httpmime:4.5.14'
 
-    testImplementation('org.spockframework:spock-core:2.3-groovy-3.0')
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.wiremock:wiremock:3.5.4'
 }
 
