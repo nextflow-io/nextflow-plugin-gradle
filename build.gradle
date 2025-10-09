@@ -10,12 +10,16 @@ version = file('VERSION').text.trim()
 
 repositories {
     mavenCentral()
+    maven { url = 'https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases' }
+    maven { url = 'https://s3-eu-west-1.amazonaws.com/maven.seqera.io/snapshots' }
 }
-
 dependencies {
     implementation 'commons-io:commons-io:2.18.0'
     implementation 'com.github.zafarkhaja:java-semver:0.10.2'
     implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'io.seqera:npr-api:0.15.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
 
     testImplementation('org.spockframework:spock-core:2.3-groovy-3.0')
     testImplementation 'org.wiremock:wiremock:3.5.4'
