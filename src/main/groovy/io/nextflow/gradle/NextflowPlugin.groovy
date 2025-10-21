@@ -128,8 +128,10 @@ class NextflowPlugin implements Plugin<Project> {
             project.tasks.extensionPoints,
             project.tasks.classes
         ]
-        if( config.buildSpec )
-            project.tasks.packagePlugin.dependsOn << project.tasks.buildSpec
+        project.afterEvaluate {
+            if( config.buildSpec )
+                project.tasks.packagePlugin.dependsOn << project.tasks.buildSpec
+        }
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
         // installPlugin - installs plugin to (local) nextflow plugins dir
