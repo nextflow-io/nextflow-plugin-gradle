@@ -5,6 +5,7 @@ import io.nextflow.gradle.NextflowPluginConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -28,6 +29,7 @@ class RegistryReleaseTask extends DefaultTask {
      * By default, this points to the spec file created by the packagePlugin task.
      */
     @InputFile
+    @Optional
     final RegularFileProperty specFile
 
     RegistryReleaseTask() {

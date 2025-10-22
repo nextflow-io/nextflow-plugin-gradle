@@ -139,7 +139,7 @@ class RegistryClient {
             id: id,
             version: version,
             checksum: "sha512:${checksum}",
-            spec: spec.text,
+            spec: spec.exists() ? spec.text : null,
             provider: provider
         ]
         def jsonBody = JsonOutput.toJson(requestBody)
