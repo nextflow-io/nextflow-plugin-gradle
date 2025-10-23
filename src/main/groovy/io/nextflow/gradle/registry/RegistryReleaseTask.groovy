@@ -44,7 +44,8 @@ class RegistryReleaseTask extends DefaultTask {
 
         specFile = project.objects.fileProperty()
         specFile.convention(project.provider {
-            buildDir.file("resources/main/META-INF/spec.json")
+            def file = buildDir.file("resources/main/META-INF/spec.json").asFile
+            file.exists() ? project.layout.projectDirectory.file(file.absolutePath) : null
         })
     }
 
@@ -72,7 +73,8 @@ class RegistryReleaseTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        client.release(project.name, version, project.file(specFile), project.file(zipFile), plugin.provider)
+        def specFileValue = specFile.isPresent() ? project.file(specFile) : null
+        client.release(project.name, version, specFileValue, project.file(zipFile), plugin.provider)
 
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")

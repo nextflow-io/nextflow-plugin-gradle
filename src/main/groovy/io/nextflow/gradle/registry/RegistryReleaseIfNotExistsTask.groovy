@@ -45,7 +45,8 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
 
         specFile = project.objects.fileProperty()
         specFile.convention(project.provider {
-            buildDir.file("resources/main/META-INF/spec.json")
+            def file = buildDir.file("resources/main/META-INF/spec.json").asFile
+            file.exists() ? project.layout.projectDirectory.file(file.absolutePath) : null
         })
     }
 
@@ -75,7 +76,8 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        def result = client.releaseIfNotExists(project.name, version, project.file(specFile), project.file(zipFile), plugin.provider) as Map<String, Object>
+        def specFileValue = specFile.isPresent() ? project.file(specFile) : null
+        def result = client.releaseIfNotExists(project.name, version, specFileValue, project.file(zipFile), plugin.provider) as Map<String, Object>
         
         if (result.skipped as Boolean) {
             // Plugin already exists - log info message and continue
