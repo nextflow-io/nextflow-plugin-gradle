@@ -46,6 +46,7 @@ The `nextflowPlugin` block supports the following configuration options:
 - **`requirePlugins`** (optional) - List of plugin dependencies that must be present
 - **`extensionPoints`** (optional) - List of extension point class names provided by the plugin
 - **`useDefaultDependencies`** (optional, default: `true`) - Whether to automatically add default dependencies required for Nextflow plugin development
+- **`generateSpec`** (optional, default: `true`) - Whether to generate a plugin spec file during the build. Set to `false` to skip spec file generation
 
 ### Registry Configuration
 

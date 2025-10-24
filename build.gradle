@@ -21,7 +21,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
 
-    testImplementation('org.spockframework:spock-core:2.3-groovy-3.0')
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.wiremock:wiremock:3.5.4'
 }
 

@@ -34,6 +34,11 @@ class RegistryReleaseTaskTest extends Specification {
         def testZip = tempDir.resolve("test-plugin-1.0.0.zip").toFile()
         testZip.text = "fake plugin content"
         task.zipFile.set(testZip)
+
+        // Set up a test spec file
+        def testSpec = tempDir.resolve("spec.json").toFile()
+        testSpec.text = "fake plugin spec"
+        task.specFile.set(testSpec)
     }
 
     def "should use default fallback configuration when registry is not configured"() {
@@ -164,6 +169,31 @@ class RegistryReleaseTaskTest extends Specification {
         then:
         // Should fail with connection error, not configuration error
         // This proves the fallback configuration is working
+        thrown(RegistryReleaseException)
+    }
+
+    def "should work when spec file is missing"() {
+        given:
+        project.ext['npr.apiKey'] = 'project-token'
+        project.ext['npr.apiUrl'] = 'https://project-registry.com/api'
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            registry {
+                url = 'https://example.com/registry'
+            }
+        }
+
+        // Don't set specFile - it should be optional
+
+        when:
+        task.run()
+
+        then:
+        // Should fail with connection error, not with missing file error
         thrown(RegistryReleaseException)
     }
 }
