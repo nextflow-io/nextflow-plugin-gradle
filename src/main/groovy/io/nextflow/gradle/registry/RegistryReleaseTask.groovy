@@ -5,6 +5,7 @@ import io.nextflow.gradle.NextflowPluginConfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -23,6 +24,14 @@ class RegistryReleaseTask extends DefaultTask {
     @InputFile
     final RegularFileProperty zipFile
 
+    /**
+     * The plugin spec file to be uploaded to the registry.
+     * By default, this points to the spec file created by the packagePlugin task.
+     */
+    @InputFile
+    @Optional
+    final RegularFileProperty specFile
+
     RegistryReleaseTask() {
         group = 'Nextflow Plugin'
         description = 'Release the assembled plugin to the registry'
@@ -31,6 +40,12 @@ class RegistryReleaseTask extends DefaultTask {
         zipFile = project.objects.fileProperty()
         zipFile.convention(project.provider {
             buildDir.file("distributions/${project.name}-${project.version}.zip")
+        })
+
+        specFile = project.objects.fileProperty()
+        specFile.convention(project.provider {
+            def file = buildDir.file("resources/main/META-INF/spec.json").asFile
+            file.exists() ? project.layout.projectDirectory.file(file.absolutePath) : null
         })
     }
 
@@ -58,7 +73,8 @@ class RegistryReleaseTask extends DefaultTask {
 
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
-        client.release(project.name, version, project.file(zipFile), plugin.provider)
+        def specFileValue = specFile.isPresent() ? project.file(specFile) : null
+        client.release(project.name, version, specFileValue, project.file(zipFile), plugin.provider)
 
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")

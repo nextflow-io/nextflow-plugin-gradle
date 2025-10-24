@@ -31,7 +31,7 @@ abstract class PluginPackageTask extends Zip {
     }
 
     // Scan the sources to check that the declared main plugin classes is included
-    private void checkPluginClassIncluded(String className) {
+    protected void checkPluginClassIncluded(String className) {
         def sourceSets = project.extensions.getByType(SourceSetContainer)
             .named(SourceSet.MAIN_SOURCE_SET_NAME).get()
 
