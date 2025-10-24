@@ -1,3 +1,8 @@
+1.0.0-beta.11 - 24 Oct 2025
+- Generate plugin spec (#12)
+- Add Claude review GH action
+- Remove unneeded deps
+
 1.0.0-beta.10 - 8 Oct 2025
 - Add CLAUDE.md documentation for AI-assisted development
 - Update RegistryClient to use JSON POST for createRelease endpoint
