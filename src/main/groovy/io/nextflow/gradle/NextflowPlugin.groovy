@@ -113,13 +113,14 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.jar.from(project.layout.buildDirectory.dir('resources/main'))
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
-        // buildSpec - generates the plugin spec file
+        // generateSpec - generates the plugin spec file
         if( config.generateSpec ) {
-            project.tasks.register('buildSpec', GenerateSpecTask)
-            project.tasks.buildSpec.dependsOn << [
+            project.tasks.register('generateSpec', GenerateSpecTask)
+            project.tasks.generateSpec.dependsOn << [
                 project.tasks.jar,
                 project.tasks.compileSpecFileGroovy
             ]
+            project.tasks.compileTestGroovy.dependsOn << project.tasks.generateSpec
         }
 
         // packagePlugin - builds the zip file
@@ -130,7 +131,7 @@ class NextflowPlugin implements Plugin<Project> {
         ]
         project.afterEvaluate {
             if( config.generateSpec )
-                project.tasks.packagePlugin.dependsOn << project.tasks.buildSpec
+                project.tasks.packagePlugin.dependsOn << project.tasks.generateSpec
         }
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
@@ -187,6 +188,7 @@ class NextflowPlugin implements Plugin<Project> {
             }
             deps.testRuntimeOnly "org.objenesis:objenesis:3.4"
             deps.testRuntimeOnly "net.bytebuddy:byte-buddy:1.14.17"
+            deps.testRuntimeOnly "org.junit.platform:junit-platform-launcher"
             deps.testImplementation(testFixtures("io.nextflow:nextflow:${nextflowVersion}"))
             deps.testImplementation(testFixtures("io.nextflow:nf-commons:${nextflowVersion}"))
         }
