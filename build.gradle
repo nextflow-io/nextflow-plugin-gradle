@@ -10,12 +10,25 @@ version = file('VERSION').text.trim()
 
 repositories {
     mavenCentral()
+    maven { url = 'https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases' }
+    maven { url = 'https://s3-eu-west-1.amazonaws.com/maven.seqera.io/snapshots' }
 }
-
+// Use compileOnly for dependencies we'll shadow - they won't be exposed to consumers
 dependencies {
-    implementation 'commons-io:commons-io:2.18.0'
-    implementation 'com.github.zafarkhaja:java-semver:0.10.2'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    compileOnly 'commons-io:commons-io:2.18.0'
+    compileOnly 'com.github.zafarkhaja:java-semver:0.10.2'
+    compileOnly 'com.google.code.gson:gson:2.10.1'
+    compileOnly 'io.seqera:npr-api:0.15.0'
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    compileOnly 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
+
+    // Tests need these dependencies at runtime
+    testRuntimeOnly 'commons-io:commons-io:2.18.0'
+    testRuntimeOnly 'com.github.zafarkhaja:java-semver:0.10.2'
+    testRuntimeOnly 'com.google.code.gson:gson:2.10.1'
+    testRuntimeOnly 'io.seqera:npr-api:0.15.0'
+    testRuntimeOnly 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    testRuntimeOnly 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
 
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -26,9 +39,28 @@ test {
     useJUnitPlatform()
 }
 
+// Configure shadowJar to bundle compileOnly dependencies and be the main artifact
 shadowJar {
     archiveClassifier = ''
+    configurations = [project.configurations.compileClasspath]
+
+    // Relocate dependencies to avoid conflicts
+    relocate 'com.google.gson', 'io.nextflow.shadow.gson'
+    relocate 'com.fasterxml.jackson', 'io.nextflow.shadow.jackson'
+    relocate 'org.apache.commons.io', 'io.nextflow.shadow.commons.io'
+
+    // Exclude Groovy and other provided dependencies
+    exclude 'org/codehaus/groovy/**'
+    exclude 'groovy/**'
+    exclude 'groovyjarjarantlr4/**'
 }
+
+// Make jar task produce the shadow JAR
+jar {
+    enabled = false
+    dependsOn(shadowJar)
+}
+assemble.dependsOn(shadowJar)
 
 gradlePlugin {
     website = 'https://github.com/nextflow-io/nextflow-plugin-gradle'
@@ -43,4 +75,17 @@ gradlePlugin {
             implementationClass = 'io.nextflow.gradle.NextflowPlugin'
         }
     }
+}
+
+// Configure component metadata to use shadow JAR
+components.java.withVariantsFromConfiguration(configurations.shadowRuntimeElements) {
+    skip()
+}
+
+// Replace artifacts with shadow JAR
+afterEvaluate {
+    configurations.runtimeElements.outgoing.artifacts.clear()
+    configurations.runtimeElements.outgoing.artifact(shadowJar)
+    configurations.apiElements.outgoing.artifacts.clear()
+    configurations.apiElements.outgoing.artifact(shadowJar)
 }

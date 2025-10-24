@@ -1,9 +1,12 @@
 package io.nextflow.gradle.registry
 
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import io.seqera.npr.api.schema.v1.CreatePluginReleaseRequest
+import io.seqera.npr.api.schema.v1.CreatePluginReleaseResponse
+import io.seqera.npr.api.schema.v1.UploadPluginReleaseResponse
 
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -27,6 +30,8 @@ import java.time.Duration
 class RegistryClient {
     private final URI url
     private final String authToken
+    private final ObjectMapper objectMapper = new ObjectMapper()
+        .registerModule(new JavaTimeModule())
 
     /**
      * Creates a new registry client.
@@ -134,18 +139,18 @@ class RegistryClient {
         def archiveBytes = Files.readAllBytes(archive.toPath())
         def checksum = computeSha512(archiveBytes)
 
-        // Build JSON request body
-        def requestBody = [
-            id: id,
-            version: version,
-            checksum: "sha512:${checksum}",
-            spec: spec?.text,
-            provider: provider
-        ]
-        def jsonBody = JsonOutput.toJson(requestBody)
+        // Build request using API model with fluent API
+        def request = new CreatePluginReleaseRequest()
+            .id(id)
+            .version(version)
+            .checksum("sha512:${checksum}".toString())
+            .spec(spec?.text)
+            .provider(provider)
+
+        def jsonBody = objectMapper.writeValueAsString(request)
 
         def requestUri = URI.create(url.toString() + "v1/plugins/release")
-        def request = HttpRequest.newBuilder()
+        def httpRequest = HttpRequest.newBuilder()
             .uri(requestUri)
             .header("Authorization", "Bearer ${authToken}")
             .header("Content-Type", "application/json")
@@ -154,21 +159,21 @@ class RegistryClient {
             .build()
 
         try {
-            def response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            def response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString())
 
             if (response.statusCode() != 200) {
                 throw new RegistryReleaseException(getErrorMessage(response, requestUri))
             }
 
-            // Parse JSON response to extract releaseId
-            def json = new JsonSlurper().parseText(response.body()) as Map
-            return json.releaseId as Long
+            // Parse JSON response using API model
+            def responseObj = objectMapper.readValue(response.body(), CreatePluginReleaseResponse)
+            return responseObj.getReleaseId()
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt()
             throw new RegistryReleaseException("Plugin draft creation to ${requestUri} was interrupted: ${e.message}", e)
         } catch (ConnectException e) {
             throw new RegistryReleaseException("Unable to connect to plugin repository at ${requestUri}: Connection refused", e)
-        } catch (UnknownHostException | IOException e) {
+        } catch (IOException e) {
             throw new RegistryReleaseException("Unable to connect to plugin repository at ${requestUri}: ${e.message}", e)
         }
     }
