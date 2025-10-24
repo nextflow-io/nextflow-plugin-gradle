@@ -1,3 +1,6 @@
+1.0.0-beta.12 - 24 Oct 2025
+- Fix errors with plugin-level tests (#16)
+
 1.0.0-beta.11 - 24 Oct 2025
 - Generate plugin spec (#12)
 - Add Claude review GH action
