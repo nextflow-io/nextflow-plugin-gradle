@@ -6,7 +6,7 @@ import spock.lang.Specification
  *
  * @author Ben Sherman <bentshermann@gmail.com>
  */
-class BuildSpecTaskTest extends Specification {
+class GenerateSpecTaskTest extends Specification {
 
     def 'should determine whether Nextflow version is >=25.09.0-edge' () {
         given:

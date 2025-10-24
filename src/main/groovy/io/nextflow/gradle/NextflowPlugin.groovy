@@ -62,7 +62,7 @@ class NextflowPlugin implements Plugin<Project> {
         }
 
         // Create specFile source set early so configurations are available
-        if( config.buildSpec ) {
+        if( config.generateSpec ) {
             project.configurations.create('specFile')
             if (!project.sourceSets.findByName('specFile')) {
                 project.sourceSets.create('specFile') { sourceSet ->
@@ -80,8 +80,8 @@ class NextflowPlugin implements Plugin<Project> {
                 addDefaultDependencies(project, nextflowVersion)
             }
 
-            // dependencies for buildSpec task
-            if( config.buildSpec ) {
+            // dependencies for generateSpec task
+            if( config.generateSpec ) {
                 project.dependencies { deps ->
                     deps.specFile "io.nextflow:nextflow:${nextflowVersion}"
                     deps.specFile project.files(project.tasks.jar.archiveFile)
@@ -114,8 +114,8 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
         // buildSpec - generates the plugin spec file
-        if( config.buildSpec ) {
-            project.tasks.register('buildSpec', BuildSpecTask)
+        if( config.generateSpec ) {
+            project.tasks.register('buildSpec', GenerateSpecTask)
             project.tasks.buildSpec.dependsOn << [
                 project.tasks.jar,
                 project.tasks.compileSpecFileGroovy
@@ -129,7 +129,7 @@ class NextflowPlugin implements Plugin<Project> {
             project.tasks.classes
         ]
         project.afterEvaluate {
-            if( config.buildSpec )
+            if( config.generateSpec )
                 project.tasks.packagePlugin.dependsOn << project.tasks.buildSpec
         }
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin

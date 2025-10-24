@@ -16,7 +16,7 @@ import org.gradle.api.Project
  *     publisher = 'nextflow'
  *     className = 'com.example.ExamplePlugin'
  *     useDefaultDependencies = false  // optional, defaults to true
- *     buildSpec = false  // optional, defaults to true
+ *     generateSpec = false  // optional, defaults to true
  *     extensionPoints = [
  *         'com.example.ExampleFunctions'
  *     ]
@@ -71,7 +71,7 @@ class NextflowPluginConfig {
     /**
      * Whether to generate a plugin spec (default: true)
      */
-    boolean buildSpec = true
+    boolean generateSpec = true
 
     /**
      * Configure registry publishing settings (optional)
