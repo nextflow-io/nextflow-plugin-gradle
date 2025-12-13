@@ -52,19 +52,19 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
 
     /**
      * Executes the registry release task with duplicate handling.
-     * 
+     *
      * This method retrieves the plugin configuration and creates a RegistryClient
      * to upload the plugin zip file to the configured registry endpoint.
      * If the plugin already exists (HTTP 409 DUPLICATE_PLUGIN), it logs an info
      * message and continues without failing.
-     * 
+     *
      * @throws RegistryReleaseException if the upload fails for reasons other than duplicates
      */
     @TaskAction
     def run() {
         final version = project.version.toString()
         final plugin = project.extensions.getByType(NextflowPluginConfig)
-        
+
         // Get or create registry configuration
         def registryConfig
         if (plugin.registry) {
@@ -77,8 +77,9 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
         def specFileValue = specFile.isPresent() ? project.file(specFile) : null
-        def result = client.releaseIfNotExists(project.name, version, specFileValue, project.file(zipFile), plugin.provider) as Map<String, Object>
-        
+        def description = readReadmeContent()
+        def result = client.releaseIfNotExists(project.name, version, specFileValue, project.file(zipFile), plugin.provider, description) as Map<String, Object>
+
         if (result.skipped as Boolean) {
             // Plugin already exists - log info message and continue
             project.logger.lifecycle("ℹ️  Plugin '${project.name}' version ${version} already exists in registry [${registryUri}] - skipping upload")
@@ -86,5 +87,20 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
             // Celebrate successful plugin upload! 🎉
             project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
         }
+    }
+
+    /**
+     * Reads the content of README.md file from the project directory.
+     *
+     * @return The content of README.md
+     * @throws RegistryReleaseException if README.md is not found
+     */
+    private String readReadmeContent() {
+        def readmeFile = project.file('README.md')
+        if (readmeFile.exists()) {
+            project.logger.debug("Reading description from README.md")
+            return readmeFile.text
+        }
+        throw new MissingReadmeException()
     }
 }

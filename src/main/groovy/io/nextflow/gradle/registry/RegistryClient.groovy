@@ -47,7 +47,7 @@ class RegistryClient {
     /**
      * Releases a plugin to the registry using the two-step upload process.
      *
-     * Step 1: Creates a draft release with metadata (id, version, checksum, provider)
+     * Step 1: Creates a draft release with metadata (id, version, checksum, provider, description)
      * Step 2: Uploads the artifact binary and completes the release
      *
      * @param id The plugin identifier/name
@@ -55,13 +55,14 @@ class RegistryClient {
      * @param spec The plugin spec JSON file
      * @param archive The plugin zip file to upload
      * @param provider The plugin provider
+     * @param description The plugin description (typically from README.md), may be null
      * @throws RegistryReleaseException if the upload fails or returns an error
      */
-    def release(String id, String version, File spec, File archive, String provider) {
+    def release(String id, String version, File spec, File archive, String provider, String description = null) {
         log.info("Releasing plugin ${id}@${version} using two-step upload")
 
         // Step 1: Create draft release with metadata
-        def releaseId = createDraftRelease(id, version, spec, archive, provider)
+        def releaseId = createDraftRelease(id, version, spec, archive, provider, description)
         log.debug("Created draft release with ID: ${releaseId}")
 
         // Step 2: Upload artifact and complete the release
@@ -80,15 +81,16 @@ class RegistryClient {
      * @param spec The plugin spec to upload
      * @param archive The plugin zip archive to upload
      * @param provider The plugin provider
+     * @param description The plugin description (typically from README.md), may be null
      * @return Map with keys: success (boolean), skipped (boolean), message (String)
      * @throws RegistryReleaseException if the upload fails for reasons other than duplicates
      */
-    def releaseIfNotExists(String id, String version, File spec, File archive, String provider) {
+    def releaseIfNotExists(String id, String version, File spec, File archive, String provider, String description = null) {
         log.info("Releasing plugin ${id}@${version} using two-step upload (if not exists)")
 
         try {
             // Step 1: Create draft release with metadata
-            def releaseId = createDraftRelease(id, version, spec, archive, provider)
+            def releaseId = createDraftRelease(id, version, spec, archive, provider, description)
             log.debug("Created draft release with ID: ${releaseId}")
 
             // Step 2: Upload artifact and complete the release
@@ -110,7 +112,7 @@ class RegistryClient {
     /**
      * Step 1: Creates a draft release with metadata only.
      *
-     * Sends plugin metadata (id, version, checksum, provider) to create a draft release
+     * Sends plugin metadata (id, version, checksum, provider, description) to create a draft release
      * and returns the release ID for use in Step 2.
      *
      * @param id The plugin identifier/name
@@ -118,10 +120,11 @@ class RegistryClient {
      * @param spec The plugin spec to upload
      * @param archive The plugin zip archive to upload
      * @param provider The plugin provider
+     * @param description The plugin description (typically from README.md), may be null
      * @return The draft release ID
      * @throws RegistryReleaseException if the request fails
      */
-    private Long createDraftRelease(String id, String version, File spec, File archive, String provider) {
+    private Long createDraftRelease(String id, String version, File spec, File archive, String provider, String description) {
         if (!provider) {
             throw new IllegalArgumentException("Plugin provider is required for plugin upload")
         }
@@ -140,7 +143,8 @@ class RegistryClient {
             version: version,
             checksum: "sha512:${checksum}",
             spec: spec?.text,
-            provider: provider
+            provider: provider,
+            description: description
         ]
         def jsonBody = JsonOutput.toJson(requestBody)
 
@@ -220,9 +224,32 @@ class RegistryClient {
         def message = "Failed to release plugin to registry ${requestUri}: HTTP ${response.statusCode()}"
         def body = response.body()
         if (body && !body.isEmpty()) {
+            // Try to parse JSON error response for better formatting
+            try {
+                def json = new JsonSlurper().parseText(body) as Map
+                if (json.type && json.message) {
+                    def errorMessage = json.message as String
+                    return formatErrorMessage(message, json.type as String, errorMessage)
+                }
+            } catch (Exception ignored) {
+                // Fall back to raw body if JSON parsing fails
+            }
             return "$message - $body".toString()
         }
         return message.toString()
+    }
+
+    private String formatErrorMessage(String prefix, String errorType, String errorMessage) {
+        def result = new StringBuilder()
+        result.append(prefix).append('\n')
+        result.append('\n')
+        result.append("Error: ${errorType}").append('\n')
+        result.append('\n')
+        // Format the message with proper line breaks
+        errorMessage.split('\n').each { line ->
+            result.append('  ').append(line.trim()).append('\n')
+        }
+        return result.toString()
     }
 
     /**
