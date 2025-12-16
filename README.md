@@ -86,6 +86,7 @@ When publishing to the registry, your project must include a `README.md` file in
 1. **Summary** - Explain what the plugin does
 2. **Get Started** - Setup and configuration instructions
 3. **Examples** - Code examples with code blocks
+4. **License** - Specify the plugin's license (e.g., Apache 2.0, MIT, GPL)
 
 **Optional sections:**
 - **What's new** - Recent changes or new features
