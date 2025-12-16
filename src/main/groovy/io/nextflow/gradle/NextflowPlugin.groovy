@@ -61,17 +61,6 @@ class NextflowPlugin implements Plugin<Project> {
             reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
         }
 
-        // Create specFile source set early so configurations are available
-        if( config.generateSpec ) {
-            project.configurations.create('specFile')
-            if (!project.sourceSets.findByName('specFile')) {
-                project.sourceSets.create('specFile') { sourceSet ->
-                    sourceSet.compileClasspath += project.configurations.getByName('specFile')
-                    sourceSet.runtimeClasspath += project.configurations.getByName('specFile')
-                }
-            }
-        }
-
         project.afterEvaluate {
             config.validate()
             final nextflowVersion = config.nextflowVersion
@@ -80,8 +69,15 @@ class NextflowPlugin implements Plugin<Project> {
                 addDefaultDependencies(project, nextflowVersion)
             }
 
-            // dependencies for generateSpec task
+            // Create specFile source set and dependencies for generateSpec task
             if( config.generateSpec ) {
+                project.configurations.create('specFile')
+                if (!project.sourceSets.findByName('specFile')) {
+                    project.sourceSets.create('specFile') { sourceSet ->
+                        sourceSet.compileClasspath += project.configurations.getByName('specFile')
+                        sourceSet.runtimeClasspath += project.configurations.getByName('specFile')
+                    }
+                }
                 project.dependencies { deps ->
                     deps.specFile "io.nextflow:nextflow:${nextflowVersion}"
                     deps.specFile project.files(project.tasks.jar.archiveFile)
@@ -113,25 +109,24 @@ class NextflowPlugin implements Plugin<Project> {
         project.tasks.jar.from(project.layout.buildDirectory.dir('resources/main'))
         project.tasks.compileTestGroovy.dependsOn << extensionPointsTask
 
-        // generateSpec - generates the plugin spec file
-        if( config.generateSpec ) {
-            project.tasks.register('generateSpec', GenerateSpecTask)
-            project.tasks.generateSpec.dependsOn << [
-                project.tasks.jar,
-                project.tasks.compileSpecFileGroovy
-            ]
-            project.tasks.compileTestGroovy.dependsOn << project.tasks.generateSpec
-        }
-
         // packagePlugin - builds the zip file
         project.tasks.register('packagePlugin', PluginPackageTask)
         project.tasks.packagePlugin.dependsOn << [
             project.tasks.extensionPoints,
             project.tasks.classes
         ]
+
+        // generateSpec - generates the plugin spec file (must be in afterEvaluate to respect config)
         project.afterEvaluate {
-            if( config.generateSpec )
+            if( config.generateSpec ) {
+                project.tasks.register('generateSpec', GenerateSpecTask)
+                project.tasks.generateSpec.dependsOn << [
+                    project.tasks.jar,
+                    project.tasks.compileSpecFileGroovy
+                ]
+                project.tasks.compileTestGroovy.dependsOn << project.tasks.generateSpec
                 project.tasks.packagePlugin.dependsOn << project.tasks.generateSpec
+            }
         }
         project.tasks.assemble.dependsOn << project.tasks.packagePlugin
 
