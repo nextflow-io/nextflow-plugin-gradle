@@ -78,6 +78,23 @@ export NPR_API_KEY=your-api-key
 
 The configuration precedence is: explicit values → project properties → environment variables → defaults.
 
+### README.md Requirement
+
+When publishing to the registry, your project must include a `README.md` file in the root directory. This file will be used as the plugin description in the registry.
+
+**Required sections:**
+1. **Summary** - Explain what the plugin does
+2. **Get Started** - Setup and configuration instructions
+3. **Examples** - Code examples with code blocks
+
+**Optional sections:**
+- **What's new** - Recent changes or new features
+- **Breaking changes** - Incompatible changes users should be aware of
+
+**Requirements:**
+- Content must be meaningful (no placeholder text like TODO, TBD, Lorem ipsum)
+- Content must be in English
+
 ### Available Tasks
 
 This will add some useful tasks to your Gradle build:

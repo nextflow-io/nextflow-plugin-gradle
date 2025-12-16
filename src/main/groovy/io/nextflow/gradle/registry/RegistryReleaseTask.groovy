@@ -51,10 +51,10 @@ class RegistryReleaseTask extends DefaultTask {
 
     /**
      * Executes the registry release task.
-     * 
+     *
      * This method retrieves the plugin configuration and creates a RegistryClient
      * to upload the plugin zip file to the configured registry endpoint.
-     * 
+     *
      * @throws RegistryReleaseException if the upload fails
      */
     @TaskAction
@@ -74,9 +74,25 @@ class RegistryReleaseTask extends DefaultTask {
         def registryUri = new URI(registryConfig.resolvedUrl)
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
         def specFileValue = specFile.isPresent() ? project.file(specFile) : null
-        client.release(project.name, version, specFileValue, project.file(zipFile), plugin.provider)
+        def description = readReadmeContent()
+        client.release(project.name, version, specFileValue, project.file(zipFile), plugin.provider, description)
 
         // Celebrate successful plugin upload! 🎉
         project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
+    }
+
+    /**
+     * Reads the content of README.md file from the project directory.
+     *
+     * @return The content of README.md
+     * @throws RegistryReleaseException if README.md is not found
+     */
+    private String readReadmeContent() {
+        def readmeFile = project.file('README.md')
+        if (readmeFile.exists()) {
+            project.logger.debug("Reading description from README.md")
+            return readmeFile.text
+        }
+        throw new MissingReadmeException()
     }
 }
