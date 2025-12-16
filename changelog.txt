@@ -1,3 +1,6 @@
+1.0.0-beta.14 - 16 Dec 2025
+- Move specFile source set and generateSpec task into afterEvaluate
+
 1.0.0-beta.13 - 16 Dec 2025
 - Add README.md requirement for registry publishing (#19)
 - Add License as required section in README.md requirements
