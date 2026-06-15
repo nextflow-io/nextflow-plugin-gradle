@@ -41,7 +41,7 @@ abstract class PluginPackageTask extends Zip {
         def sources = sourceSets.getAllSource()
 
         // try to find the plugin class in the source dirs
-        def classNameAsPath = className.replaceAll('\\.', File.separator)
+        def classNameAsPath = className.replace('.', File.separator)
         def matched = sources.find { file ->
             def name = FilenameUtils.removeExtension(file.absolutePath)
             for (def dir : sources.getSourceDirectories()) {
