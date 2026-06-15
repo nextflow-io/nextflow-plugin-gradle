@@ -23,7 +23,7 @@ version = '0.0.1'
 
 nextflowPlugin {
     // minimum nextflow version
-    nextflowVersion = '25.04.0'
+    nextflowVersion = '25.10.0'
 
     provider = 'Example Inc'
     description = 'My example plugin'
@@ -138,7 +138,7 @@ To disable default dependencies and manage them manually:
 
 ```gradle
 nextflowPlugin {
-    nextflowVersion = '25.04.0'
+    nextflowVersion = '25.10.0'
     provider = 'Example Inc'
     className = 'com.example.ExamplePlugin'
     useDefaultDependencies = false
@@ -148,7 +148,7 @@ nextflowPlugin {
 
 dependencies {
     // Your custom dependencies here
-    compileOnly 'io.nextflow:nextflow:25.04.0'
+    compileOnly 'io.nextflow:nextflow:25.10.0'
     // etc...
 }
 ```
