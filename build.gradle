@@ -20,6 +20,15 @@ dependencies {
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.wiremock:wiremock:3.13.1'
+
+    // ponytail: pin patched versions of WireMock's transitive deps to clear
+    // Dependabot alerts. Test-only; never shipped in the published plugin.
+    // The 4 Jetty CVEs remain unfixable here (patches only exist in Jetty 12,
+    // and WireMock 3 is locked to Jetty 11); drop this block for WireMock 4.
+    constraints {
+        testImplementation 'com.fasterxml.jackson.core:jackson-core:2.21.1'
+        testImplementation 'net.minidev:json-smart:2.5.2'
+    }
 }
 
 test {
