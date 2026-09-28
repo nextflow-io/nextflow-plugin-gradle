@@ -71,7 +71,11 @@ class NextflowPlugin implements Plugin<Project> {
 
             // Create specFile source set and dependencies for generateSpec task
             if( config.generateSpec ) {
-                project.configurations.create('specFile')
+                // PluginSpecWriter loads every extension point class, so the classpath must
+                // include the plugin's own dependencies (compileOnly and bundled) as well
+                project.configurations.create('specFile') { conf ->
+                    conf.extendsFrom(project.configurations.compileOnly, project.configurations.implementation)
+                }
                 if (!project.sourceSets.findByName('specFile')) {
                     project.sourceSets.create('specFile') { sourceSet ->
                         sourceSet.compileClasspath += project.configurations.getByName('specFile')
