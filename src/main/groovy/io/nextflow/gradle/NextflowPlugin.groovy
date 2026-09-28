@@ -58,7 +58,15 @@ class NextflowPlugin implements Plugin<Project> {
         project.repositories { reps ->
             reps.mavenLocal()
             reps.mavenCentral()
-            reps.maven { url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases" }
+            // only query Seqera's repo for Seqera artifacts -- S3 returns 403 (not 404) for
+            // missing artifacts, which fails the build instead of reporting "not found"
+            reps.maven {
+                url = "https://s3-eu-west-1.amazonaws.com/maven.seqera.io/releases"
+                content {
+                    includeGroup 'io.nextflow'
+                    includeGroup 'io.seqera'
+                }
+            }
         }
 
         project.afterEvaluate {
