@@ -126,7 +126,7 @@ class NextflowPlugin implements Plugin<Project> {
                 project.tasks.register('generateSpec', GenerateSpecTask)
                 project.tasks.generateSpec.dependsOn << [
                     project.tasks.jar,
-                    project.tasks.compileSpecFileGroovy
+                    'compileSpecFileGroovy'
                 ]
                 project.tasks.compileTestGroovy.dependsOn << project.tasks.generateSpec
                 project.tasks.packagePlugin.dependsOn << project.tasks.generateSpec
