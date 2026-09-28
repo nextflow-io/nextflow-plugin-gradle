@@ -18,6 +18,22 @@ class NextflowPluginConfigTest extends Specification {
             .build()
         project.version = '1.0.0'
         config = new NextflowPluginConfig(project)
+        config.extensionPoints = ['com.example.TestExtension']
+    }
+
+    def "should fail when extensionPoints is empty"() {
+        given:
+        config.nextflowVersion = '24.04.0'
+        config.className = 'com.example.TestPlugin'
+        config.provider = 'Test Author'
+        config.extensionPoints = []
+
+        when:
+        config.validate()
+
+        then:
+        def ex = thrown(RuntimeException)
+        ex.message.startsWith('nextflowPlugin.extensionPoints not specified')
     }
 
     def "should pass validation with valid configuration"() {
@@ -263,6 +279,7 @@ class NextflowPluginConfigTest extends Specification {
         config.nextflowVersion = '24.04.0'
         config.className = 'com.example.TestPlugin'
         config.provider = 'Test Author'
+        config.extensionPoints = ['com.example.TestExtension']
 
         when:
         config.validate()
