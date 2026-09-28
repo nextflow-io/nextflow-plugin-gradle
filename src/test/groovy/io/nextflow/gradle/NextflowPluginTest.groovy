@@ -388,4 +388,88 @@ class NextflowPluginTest extends Specification {
         specFile.extendsFrom.contains(project.configurations.implementation)
     }
 
+    def "should write empty extensions.idx when no extension points are declared"() {
+        given:
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.extensionPoints
+        def index = task.outputFile.get().asFile
+        index.parentFile.mkdirs()
+        index.text = 'com.example.StaleExtension\n'
+
+        when:
+        task.run()
+
+        then: "stale index is cleared so pf4j doesn't fall back to the Nextflow runtime's index"
+        index.exists()
+        index.text == ''
+    }
+
+    def "should keep extensions.idx from resources when no extension points are declared"() {
+        given:
+        def resource = project.file('src/main/resources/META-INF/extensions.idx')
+        resource.parentFile.mkdirs()
+        resource.text = 'com.example.TestExtension\n'
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.extensionPoints
+
+        when:
+        task.run()
+
+        then:
+        !task.outputFile.get().asFile.exists()
+    }
+
+    def "should write empty spec file when no extension points are declared"() {
+        given:
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.generateSpec
+        def spec = task.specFile.get().asFile
+        spec.parentFile.mkdirs()
+
+        when:
+        task.exec()
+
+        then:
+        spec.exists()
+        spec.text == ''
+    }
+
+    def "should report only the validation error for an invalid config"() {
+        given:
+        project.nextflowPlugin {
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def ex = thrown(Exception)
+        def messages = []
+        def queue = [ex]
+        while( queue ) {
+            def e = queue.pop()
+            if( e.message ) messages << e.message
+            queue.addAll(e.hasProperty('causes') ? e.causes : [e.cause].findAll())
+        }
+        messages.contains('nextflowPlugin.provider not specified')
+        !messages.any { it.contains('compileSpecFileGroovy') }
+    }
+
 }

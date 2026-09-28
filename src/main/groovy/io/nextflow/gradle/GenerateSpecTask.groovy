@@ -75,13 +75,17 @@ abstract class GenerateSpecTask extends JavaExec {
     /**
      * Executes the task to generate the plugin spec file.
      * Checks if the Nextflow version supports plugin specs (>= 25.09.0).
-     * For unsupported versions, creates an empty spec file instead.
+     * For unsupported versions, or plugins without extension points, creates an empty spec file instead.
      */
     @Override
     void exec() {
         def config = project.extensions.getByType(NextflowPluginConfig)
         if (!isVersionSupported(config.nextflowVersion)) {
             project.logger.warn("Nextflow version '${config.nextflowVersion}' does not support plugin specs (requires 25.09.0 or later) -- generating empty spec file")
+            createEmptySpecFile()
+            return
+        }
+        if (!extensionPoints.get()) {
             createEmptySpecFile()
             return
         }

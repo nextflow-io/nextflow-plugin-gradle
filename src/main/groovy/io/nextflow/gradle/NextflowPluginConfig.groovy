@@ -118,9 +118,6 @@ class NextflowPluginConfig {
         if (provider && !provider.trim()) {
             throw new RuntimeException('nextflowPlugin.provider cannot be empty')
         }
-        if (!extensionPoints) {
-            throw new RuntimeException("nextflowPlugin.extensionPoints not specified. A plugin must declare at least one extension point, e.g. extensionPoints = ['acme.plugin.MyExtension']")
-        }
 
         // validate nextflowVersion is valid semver (normalize to handle Nextflow's version format)
         def normalizedNextflowVersion = normalizeVersion(nextflowVersion)
