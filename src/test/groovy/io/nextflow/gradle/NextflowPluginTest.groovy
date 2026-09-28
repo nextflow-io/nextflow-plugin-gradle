@@ -369,4 +369,23 @@ class NextflowPluginTest extends Specification {
         lines.contains('com.example.TestExtension')
     }
 
+    def "should include plugin compile dependencies in the spec file classpath"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '26.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "extension points implementing compileOnly/implementation types can be loaded by PluginSpecWriter"
+        def specFile = project.configurations.specFile
+        specFile.extendsFrom.contains(project.configurations.compileOnly)
+        specFile.extendsFrom.contains(project.configurations.implementation)
+    }
+
 }
