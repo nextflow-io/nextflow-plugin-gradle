@@ -81,6 +81,7 @@ abstract class GenerateSpecTask extends JavaExec {
     void exec() {
         def config = project.extensions.getByType(NextflowPluginConfig)
         if (!isVersionSupported(config.nextflowVersion)) {
+            project.logger.warn("Nextflow version '${config.nextflowVersion}' does not support plugin specs (requires 25.09.0 or later) -- generating empty spec file")
             createEmptySpecFile()
             return
         }
@@ -94,16 +95,15 @@ abstract class GenerateSpecTask extends JavaExec {
      * @param nextflowVersion the Nextflow version string (e.g., "25.09.0-edge")
      * @return true if the version supports plugin specs, false otherwise
      */
-    private boolean isVersionSupported(String nextflowVersion) {
+    static boolean isVersionSupported(String nextflowVersion) {
         try {
             def parts = nextflowVersion.split(/\./, 3)
             if (parts.length < 3)
                 return false
             def major = Integer.parseInt(parts[0])
             def minor = Integer.parseInt(parts[1])
-            return major >= 25 && minor >= 9
-        } catch (Exception e) {
-            project.logger.warn("Unable to parse Nextflow version '${nextflowVersion}', assuming plugin spec is not supported: ${e.message}")
+            return major > 25 || (major == 25 && minor >= 9)
+        } catch (NumberFormatException e) {
             return false
         }
     }
