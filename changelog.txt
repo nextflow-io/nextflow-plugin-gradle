@@ -1,3 +1,8 @@
+1.0.0-beta.16 - 1 Oct 2026
+- Allow plugins without extension points (#25)
+- Fix generateSpec version check for Nextflow 26.x (#22)
+- Include plugin dependencies in generateSpec classpath (#23)
+
 1.0.0-beta.15 - 15 Jun 2026
 - Fix packagePlugin failure on Windows (#20)
 - Use wiremock-standalone to remove vulnerable test transitive dependencies
