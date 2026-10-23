@@ -228,6 +228,24 @@ class NextflowPluginTest extends Specification {
         compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
     }
 
+    def "should compile with method parameter names"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.compileJava.options.compilerArgs.contains('-parameters')
+        project.tasks.compileGroovy.groovyOptions.parameters
+    }
+
     def "should configure jar task to include extensions.idx file"() {
         given:
         project.nextflowPlugin {
