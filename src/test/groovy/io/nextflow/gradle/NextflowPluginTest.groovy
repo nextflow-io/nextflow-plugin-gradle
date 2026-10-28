@@ -244,6 +244,7 @@ class NextflowPluginTest extends Specification {
         then:
         project.tasks.compileJava.options.compilerArgs.contains('-parameters')
         project.tasks.compileGroovy.groovyOptions.parameters
+        project.tasks.compileGroovy.options.compilerArgs.contains('-parameters')
     }
 
     def "should configure jar task to include extensions.idx file"() {

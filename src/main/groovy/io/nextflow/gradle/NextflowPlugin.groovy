@@ -58,6 +58,8 @@ class NextflowPlugin implements Plugin<Project> {
         }
         project.tasks.withType(GroovyCompile).configureEach { task ->
             task.groovyOptions.parameters = true
+            // Java sources jointly compiled with Groovy
+            task.options.compilerArgs.add('-parameters')
         }
 
         // -----------------------------------
