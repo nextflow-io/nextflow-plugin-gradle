@@ -52,6 +52,16 @@ class NextflowPlugin implements Plugin<Project> {
         }
         // </HACK>
 
+        // retain method parameter names so that generateSpec can read them
+        project.tasks.withType(JavaCompile).configureEach { task ->
+            task.options.compilerArgs.add('-parameters')
+        }
+        project.tasks.withType(GroovyCompile).configureEach { task ->
+            task.groovyOptions.parameters = true
+            // Java sources jointly compiled with Groovy
+            task.options.compilerArgs.add('-parameters')
+        }
+
         // -----------------------------------
         // Common dependencies
         // -----------------------------------
