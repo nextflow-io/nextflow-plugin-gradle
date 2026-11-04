@@ -1,0 +1,31 @@
+1.0.0-beta.16 - 1 Oct 2026
+- Allow plugins without extension points (#25)
+- Fix generateSpec version check for Nextflow 26.x (#22)
+- Include plugin dependencies in generateSpec classpath (#23)
+
+1.0.0-beta.15 - 15 Jun 2026
+- Fix packagePlugin failure on Windows (#20)
+- Use wiremock-standalone to remove vulnerable test transitive dependencies
+- Update README example to Nextflow 25.10.0
+
+1.0.0-beta.14 - 16 Dec 2025
+- Move specFile source set and generateSpec task into afterEvaluate
+
+1.0.0-beta.13 - 16 Dec 2025
+- Add README.md requirement for registry publishing (#19)
+- Add License as required section in README.md requirements
+
+1.0.0-beta.12 - 24 Oct 2025
+- Fix errors with plugin-level tests (#16)
+
+1.0.0-beta.11 - 24 Oct 2025
+- Generate plugin spec (#12)
+- Add Claude review GH action
+- Remove unneeded deps
+
+1.0.0-beta.10 - 8 Oct 2025
+- Add CLAUDE.md documentation for AI-assisted development
+- Update RegistryClient to use JSON POST for createRelease endpoint
+- Fix Gradle 9 compatibility for task classes extending abstract types
+- Make provider field mandatory and fix URI construction
+- Implement two-step plugin upload process for registry client

@@ -1,0 +1,494 @@
+package io.nextflow.gradle
+
+import org.gradle.api.Project
+import org.gradle.testfixtures.ProjectBuilder
+import spock.lang.Specification
+
+/**
+ * Unit tests for NextflowPlugin
+ */
+class NextflowPluginTest extends Specification {
+
+    Project project
+
+    def setup() {
+        project = ProjectBuilder.builder()
+            .withName('test-plugin')
+            .build()
+        project.version = '1.0.0'
+        project.pluginManager.apply('io.nextflow.nextflow-plugin')
+    }
+
+    def "should register releasePlugin task when publishing is configured"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            registry {
+                url = 'https://example.com/registry'
+            }
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.releasePlugin.group == 'Nextflow Plugin'
+        project.tasks.releasePlugin.description == 'Release plugin to configured destination'
+    }
+
+
+    def "should make releasePlugin depend on registry publishing task"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            registry {
+                url = 'https://example.com/registry'
+            }
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def releasePlugin = project.tasks.releasePlugin
+        def releaseToRegistry = project.tasks.releasePluginToRegistry
+        releasePlugin.taskDependencies.getDependencies(releasePlugin).contains(releaseToRegistry)
+    }
+
+
+    def "should always register releasePlugin tasks even when no registry is configured"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+        project.tasks.releasePlugin.group == 'Nextflow Plugin'
+        project.tasks.releasePlugin.description == 'Release plugin to configured destination'
+    }
+
+    def "should register releasePlugin tasks when no explicit registry configuration exists"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            // No registry block - should use fallback configuration
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+    }
+
+    def "should create releasePlugin task that works with fallback configuration"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            // No registry block - should use fallback configuration
+        }
+
+        when:
+        project.evaluate()
+        def task = project.tasks.findByName('releasePlugin')
+
+        then:
+        task != null
+        task.group == 'Nextflow Plugin'
+        
+        and: "Other tasks should also exist"
+        project.tasks.findByName('packagePlugin') != null
+        project.tasks.findByName('installPlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+    }
+
+    def "should handle empty registry block and use fallback configuration"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+            registry {
+                // completely empty registry block
+            }
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.findByName('releasePlugin') != null
+        project.tasks.findByName('releasePluginToRegistry') != null
+        
+        and: "Other tasks should also exist"
+        project.tasks.findByName('packagePlugin') != null
+        project.tasks.findByName('installPlugin') != null
+    }
+
+    def "should add default dependencies when useDefaultDependencies is true"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            useDefaultDependencies = true
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' && it.version == '1.7.10' }
+        compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
+
+        and: "test dependencies should be added"
+        def testDeps = project.configurations.testImplementation.dependencies
+        testDeps.find { it.group == 'org.apache.groovy' && it.name == 'groovy' }
+        testDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        testDeps.find { it.group == 'org.spockframework' && it.name == 'spock-core' }
+    }
+
+    def "should not add default dependencies when useDefaultDependencies is false"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            useDefaultDependencies = false
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        !compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' }
+        !compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' }
+        !compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' }
+
+        and: "test dependencies should not be added"
+        def testDeps = project.configurations.testImplementation.dependencies
+        !testDeps.find { it.group == 'org.apache.groovy' && it.name == 'groovy' }
+        !testDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' }
+        !testDeps.find { it.group == 'org.spockframework' && it.name == 'spock-core' }
+    }
+
+    def "should add default dependencies by default when useDefaultDependencies is not specified"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def compileOnlyDeps = project.configurations.compileOnly.dependencies
+        compileOnlyDeps.find { it.group == 'io.nextflow' && it.name == 'nextflow' && it.version == '24.04.0' }
+        compileOnlyDeps.find { it.group == 'org.slf4j' && it.name == 'slf4j-api' && it.version == '1.7.10' }
+        compileOnlyDeps.find { it.group == 'org.pf4j' && it.name == 'pf4j' && it.version == '3.4.1' }
+    }
+
+    def "should compile with method parameter names"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.compileJava.options.compilerArgs.contains('-parameters')
+        project.tasks.compileGroovy.groovyOptions.parameters
+        project.tasks.compileGroovy.options.compilerArgs.contains('-parameters')
+    }
+
+    def "should configure jar task to include extensions.idx file"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension', 'com.example.AnotherExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "jar task should depend on extensionPoints task"
+        def jarTask = project.tasks.jar
+        def extensionPointsTask = project.tasks.extensionPoints
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        
+        and: "extensionPoints task should be registered"
+        extensionPointsTask != null
+    }
+
+    def "should include extensions.idx file in built JAR"() {
+        given:
+        // Create a minimal source file to satisfy the jar task
+        def srcDir = project.file('src/main/groovy/com/example')
+        srcDir.mkdirs()
+        def pluginFile = new File(srcDir, 'TestPlugin.groovy')
+        pluginFile.text = '''
+            package com.example
+            import org.pf4j.Plugin
+            
+            class TestPlugin extends Plugin {
+            }
+        '''.stripIndent()
+
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension', 'com.example.AnotherExtension']
+        }
+
+        when:
+        project.evaluate()
+        
+        // First run the extensionPoints task to generate the extensions.idx
+        def extensionPointsTask = project.tasks.extensionPoints
+        extensionPointsTask.run()
+        
+        // Verify the extensions.idx was generated
+        def extensionsFile = extensionPointsTask.outputFile.get().asFile
+        extensionsFile.exists()
+        
+        // Now check that the jar task includes this file in its inputs
+        def jarTask = project.tasks.jar
+        def jarInputFiles = jarTask.source.files
+
+        then:
+        extensionsFile.exists()
+        extensionsFile.text.trim() == 'com.example.TestExtension\ncom.example.AnotherExtension'
+        
+        and: "jar task should include the extensions.idx in its source files"
+        jarInputFiles.contains(extensionsFile)
+    }
+
+    def "should have consistent extensions.idx between jar and packagePlugin tasks"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author' 
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "both jar and packagePlugin should depend on the same extensionPoints task"
+        def extensionPointsTask = project.tasks.extensionPoints
+        def jarTask = project.tasks.jar
+        def packageTask = project.tasks.packagePlugin
+        
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        packageTask.taskDependencies.getDependencies(packageTask).contains(extensionPointsTask)
+        
+        and: "both tasks use the same extensionPoints task instance"
+        extensionPointsTask != null
+        
+        and: "packagePlugin includes jar contents via 'with' directive"
+        // The packagePlugin uses 'with project.tasks.jar' in its constructor
+        // so it will include whatever the jar task produces, ensuring consistency
+        packageTask != null
+    }
+
+    def "should configure jar task to include extensions.idx with correct META-INF path structure"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            extensionPoints = ['com.example.S3PathFactory', 'com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+        
+        // Generate extensions.idx to verify path structure
+        def extensionPointsTask = project.tasks.extensionPoints
+        extensionPointsTask.run()
+        
+        // Verify the generated file is in the correct location
+        def extensionsFile = extensionPointsTask.outputFile.get().asFile
+        def jarTask = project.tasks.jar
+
+        then:
+        extensionsFile.exists()
+        extensionsFile.text.contains('com.example.S3PathFactory')
+        extensionsFile.text.contains('com.example.TestExtension')
+        
+        and: "extensions.idx should be generated in build/resources/main/META-INF/ structure"
+        extensionsFile.absolutePath.contains('build/resources/main/META-INF/extensions.idx')
+        
+        and: "jar task should be configured to include the generated resources directory"
+        def jarInputs = jarTask.source.files
+        def buildResourcesMain = project.layout.buildDirectory.dir('resources/main').get().asFile
+        jarInputs.any { it.absolutePath.startsWith(buildResourcesMain.absolutePath) }
+        
+        and: "jar task should depend on extensionPoints task"
+        jarTask.taskDependencies.getDependencies(jarTask).contains(extensionPointsTask)
+        
+        and: "extensions.idx content should be properly formatted"
+        def lines = extensionsFile.text.trim().split('\n')
+        lines.length == 2
+        lines.contains('com.example.S3PathFactory')
+        lines.contains('com.example.TestExtension')
+    }
+
+    def "should include plugin compile dependencies in the spec file classpath"() {
+        given:
+        project.nextflowPlugin {
+            description = 'A test plugin'
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '26.04.0'
+            extensionPoints = ['com.example.TestExtension']
+        }
+
+        when:
+        project.evaluate()
+
+        then: "extension points implementing compileOnly/implementation types can be loaded by PluginSpecWriter"
+        def specFile = project.configurations.specFile
+        specFile.extendsFrom.contains(project.configurations.compileOnly)
+        specFile.extendsFrom.contains(project.configurations.implementation)
+    }
+
+    def "should write empty extensions.idx when no extension points are declared"() {
+        given:
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.extensionPoints
+        def index = task.outputFile.get().asFile
+        index.parentFile.mkdirs()
+        index.text = 'com.example.StaleExtension\n'
+
+        when:
+        task.run()
+
+        then: "stale index is cleared so pf4j doesn't fall back to the Nextflow runtime's index"
+        index.exists()
+        index.text == ''
+    }
+
+    def "should keep extensions.idx from resources when no extension points are declared"() {
+        given:
+        def resource = project.file('src/main/resources/META-INF/extensions.idx')
+        resource.parentFile.mkdirs()
+        resource.text = 'com.example.TestExtension\n'
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.extensionPoints
+
+        when:
+        task.run()
+
+        then:
+        !task.outputFile.get().asFile.exists()
+    }
+
+    def "should write empty spec file when no extension points are declared"() {
+        given:
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+        project.evaluate()
+        def task = project.tasks.generateSpec
+        def spec = task.specFile.get().asFile
+        spec.parentFile.mkdirs()
+
+        when:
+        task.exec()
+
+        then:
+        spec.exists()
+        spec.text == ''
+    }
+
+    def "should report only the validation error for an invalid config"() {
+        given:
+        project.nextflowPlugin {
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '25.10.0'
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def ex = thrown(Exception)
+        def messages = []
+        def queue = [ex]
+        while( queue ) {
+            def e = queue.pop()
+            if( e.message ) messages << e.message
+            queue.addAll(e.hasProperty('causes') ? e.causes : [e.cause].findAll())
+        }
+        messages.contains('nextflowPlugin.provider not specified')
+        !messages.any { it.contains('compileSpecFileGroovy') }
+    }
+
+}

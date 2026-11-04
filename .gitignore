@@ -1,0 +1,11 @@
+# gradle
+.gradle/
+build/
+
+# nextflow
+.nextflow*
+work/
+
+# intellij
+.idea/
+out/
