@@ -37,6 +37,12 @@ class NextflowPluginConfig {
     String nextflowVersion = '24.11.0-edge'
 
     /**
+     * Registry namespace; the plugin id becomes '<namespace>/<project.name>'.
+     * (optional)
+     */
+    String namespace
+
+    /**
      * Who created/maintains this plugin?
      */
     String provider
@@ -80,6 +86,10 @@ class NextflowPluginConfig {
 
     NextflowPluginConfig(Project project) {
         this.project = project
+    }
+
+    String getPluginId() {
+        namespace ? "${namespace}/${project.name}" : project.name
     }
 
     private String normalizeVersion(String version) {
@@ -133,6 +143,10 @@ class NextflowPluginConfig {
         // validate name/id
         if (!project.name.toString().matches(/[a-zA-Z0-9-]{5,64}/)) {
             throw new RuntimeException("Plugin id '${project.name}' is invalid. Plugin ids can contain numbers, letters, and the '-' symbol")
+        }
+        // same rule as the registry namespace names
+        if (namespace && !namespace.matches(/^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/)) {
+            throw new RuntimeException("nextflowPlugin.namespace '${namespace}' is invalid. Namespaces can contain lowercase letters, numbers and '-', and cannot start or end with '-'")
         }
         // validate version is valid semver
         if (!Version.isValid(project.version.toString(), true)) {
