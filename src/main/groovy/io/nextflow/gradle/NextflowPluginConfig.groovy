@@ -146,7 +146,7 @@ class NextflowPluginConfig {
         }
         // same rule as the registry namespace names
         if (namespace && !namespace.matches(/^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/)) {
-            throw new RuntimeException("nextflowPlugin.namespace '${namespace}' is invalid. Namespaces can contain lowercase letters, numbers and '-', and cannot start or end with '-'")
+            throw new RuntimeException("nextflowPlugin.namespace '${namespace}' is invalid. Namespaces have 1 or 3 to 64 characters: lowercase letters, numbers and '-', and cannot start or end with '-'")
         }
         // validate version is valid semver
         if (!Version.isValid(project.version.toString(), true)) {

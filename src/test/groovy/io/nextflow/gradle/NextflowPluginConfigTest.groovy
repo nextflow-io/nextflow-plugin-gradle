@@ -315,10 +315,10 @@ class NextflowPluginConfigTest extends Specification {
 
         then:
         RuntimeException ex = thrown()
-        ex.message == "nextflowPlugin.namespace '${NS}' is invalid. Namespaces can contain lowercase letters, numbers and '-', and cannot start or end with '-'"
+        ex.message == "nextflowPlugin.namespace '${NS}' is invalid. Namespaces have 1 or 3 to 64 characters: lowercase letters, numbers and '-', and cannot start or end with '-'"
 
         where:
-        NS << ['MyOrg', '-org', 'org-', 'my_org', 'a/b']
+        NS << ['MyOrg', '-org', 'org-', 'my_org', 'a/b', 'ab', 'a' * 65]
     }
 
     def "should pass with all valid configuration including edge cases"() {

@@ -221,6 +221,7 @@ class RegistryReleaseTaskTest extends Specification {
             }
         }
         def releaseTask = project.tasks.create('nsRelease', TASK)
+        assert releaseTask.zipFile.get().asFile.name == 'test-plugin-1.0.0.zip'
         releaseTask.zipFile.set(task.zipFile)
 
         when:

@@ -14,16 +14,16 @@ abstract class PluginInstallTask extends Sync {
 
         final buildDir = project.layout.buildDirectory.get()
         def (pluginsDir, reason) = getNextflowPluginsDir()
+        final config = project.extensions.getByType(NextflowPluginConfig)
 
         project.afterEvaluate {
-            final namespace = project.extensions.getByType(NextflowPluginConfig).namespace
             from(project.zipTree("${buildDir}/distributions/${project.name}-${project.version}.zip"))
-            into("${pluginsDir}/${namespace ? namespace + '/' : ''}${project.name}-${project.version}")
+            into("${pluginsDir}/${config.pluginId}-${project.version}")
         }
 
         doLast {
-            println "Plugin ${project.name} installed successfully!"
-            println "Installation location: $pluginsDir"
+            println "Plugin ${config.pluginId} installed successfully!"
+            println "Installation location: ${destinationDir}"
             println "Installation location determined by - $reason"
         }
     }
