@@ -16,8 +16,9 @@ abstract class PluginInstallTask extends Sync {
         def (pluginsDir, reason) = getNextflowPluginsDir()
 
         project.afterEvaluate {
+            final namespace = project.extensions.getByType(NextflowPluginConfig).namespace
             from(project.zipTree("${buildDir}/distributions/${project.name}-${project.version}.zip"))
-            into("${pluginsDir}/${project.name}-${project.version}")
+            into("${pluginsDir}/${namespace ? namespace + '/' : ''}${project.name}-${project.version}")
         }
 
         doLast {
