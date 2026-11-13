@@ -23,7 +23,7 @@ abstract class PluginInstallTask extends Sync {
 
         doLast {
             println "Plugin ${config.pluginId} installed successfully!"
-            println "Installation location: ${destinationDir}"
+            println "Installation location: $pluginsDir"
             println "Installation location determined by - $reason"
         }
     }

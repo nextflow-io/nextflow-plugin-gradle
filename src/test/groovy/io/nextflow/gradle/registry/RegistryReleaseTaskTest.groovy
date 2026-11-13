@@ -239,5 +239,6 @@ class RegistryReleaseTaskTest extends Specification {
         RegistryReleaseTask             | 'myorg' | 'myorg/test-plugin'
         RegistryReleaseIfNotExistsTask  | 'myorg' | 'myorg/test-plugin'
         RegistryReleaseTask             | null    | 'test-plugin'
+        RegistryReleaseIfNotExistsTask  | null    | 'test-plugin'
     }
 }
