@@ -1,5 +1,6 @@
 package io.nextflow.gradle.registry
 
+import com.github.tomakehurst.wiremock.WireMockServer
 import io.nextflow.gradle.NextflowPluginConfig
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -7,6 +8,9 @@ import spock.lang.Specification
 import spock.lang.TempDir
 
 import java.nio.file.Path
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 
 /**
  * Unit tests for RegistryReleaseTask error handling
@@ -195,5 +199,46 @@ class RegistryReleaseTaskTest extends Specification {
         then:
         // Should fail with connection error, not with missing file error
         thrown(RegistryReleaseException)
+    }
+
+    def "should send the plugin id in the release request"() {
+        given:
+        def server = new WireMockServer(wireMockConfig().port(0))
+        server.start()
+        server.stubFor(post(urlEqualTo("/api/v1/plugins/release"))
+            .willReturn(aResponse().withStatus(200).withBody('{"releaseId": 123}')))
+        server.stubFor(post(urlEqualTo("/api/v1/plugins/release/123/upload"))
+            .willReturn(aResponse().withStatus(200).withBody('{}')))
+        project.file('README.md').text = 'readme'
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            namespace = NS
+            registry {
+                url = "http://localhost:${server.port()}/api"
+                apiKey = 'x'
+            }
+        }
+        def releaseTask = project.tasks.create('nsRelease', TASK)
+        assert releaseTask.zipFile.get().asFile.name == 'test-plugin-1.0.0.zip'
+        releaseTask.zipFile.set(task.zipFile)
+
+        when:
+        releaseTask.run()
+
+        then:
+        server.verify(postRequestedFor(urlEqualTo("/api/v1/plugins/release"))
+            .withRequestBody(containing("\"id\":\"${ID}\"")))
+
+        cleanup:
+        server.stop()
+
+        where:
+        TASK                            | NS      | ID
+        RegistryReleaseTask             | 'myorg' | 'myorg/test-plugin'
+        RegistryReleaseIfNotExistsTask  | 'myorg' | 'myorg/test-plugin'
+        RegistryReleaseTask             | null    | 'test-plugin'
+        RegistryReleaseIfNotExistsTask  | null    | 'test-plugin'
     }
 }

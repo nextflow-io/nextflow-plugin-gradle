@@ -272,6 +272,55 @@ class NextflowPluginConfigTest extends Specification {
         ex.message == "Plugin id 'bad_name' is invalid. Plugin ids can contain numbers, letters, and the '-' symbol"
     }
 
+    def "should build the plugin id from the namespace"() {
+        when:
+        config.namespace = NS
+
+        then:
+        config.pluginId == ID
+
+        where:
+        NS      | ID
+        null    | 'test-plugin'
+        ''      | 'test-plugin'
+        'myorg' | 'myorg/test-plugin'
+    }
+
+    def "should pass with a valid namespace"() {
+        given:
+        config.nextflowVersion = '24.04.0'
+        config.className = 'com.example.TestPlugin'
+        config.provider = 'Test Author'
+        config.namespace = NS
+
+        when:
+        config.validate()
+
+        then:
+        noExceptionThrown()
+
+        where:
+        NS << ['myorg', 'a1-b', '']
+    }
+
+    def "should refuse an invalid namespace"() {
+        given:
+        config.nextflowVersion = '24.04.0'
+        config.className = 'com.example.TestPlugin'
+        config.provider = 'Test Author'
+        config.namespace = NS
+
+        when:
+        config.validate()
+
+        then:
+        RuntimeException ex = thrown()
+        ex.message == "nextflowPlugin.namespace '${NS}' is invalid. Namespaces have 1 or 3 to 64 characters: lowercase letters, numbers and '-', and cannot start or end with '-'"
+
+        where:
+        NS << ['MyOrg', '-org', 'org-', 'my_org', 'a/b', 'ab', 'a' * 65]
+    }
+
     def "should pass with all valid configuration including edge cases"() {
         given:
         config.nextflowVersion = '25.04.0-edge'

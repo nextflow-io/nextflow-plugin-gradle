@@ -78,14 +78,14 @@ class RegistryReleaseIfNotExistsTask extends DefaultTask {
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
         def specFileValue = specFile.isPresent() ? project.file(specFile) : null
         def description = readReadmeContent()
-        def result = client.releaseIfNotExists(project.name, version, specFileValue, project.file(zipFile), plugin.provider, description) as Map<String, Object>
+        def result = client.releaseIfNotExists(plugin.pluginId, version, specFileValue, project.file(zipFile), plugin.provider, description) as Map<String, Object>
 
         if (result.skipped as Boolean) {
             // Plugin already exists - log info message and continue
-            project.logger.lifecycle("ℹ️  Plugin '${project.name}' version ${version} already exists in registry [${registryUri}] - skipping upload")
+            project.logger.lifecycle("ℹ️  Plugin '${plugin.pluginId}' version ${version} already exists in registry [${registryUri}] - skipping upload")
         } else {
             // Celebrate successful plugin upload! 🎉
-            project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
+            project.logger.lifecycle("🎉 SUCCESS! Plugin '${plugin.pluginId}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
         }
     }
 

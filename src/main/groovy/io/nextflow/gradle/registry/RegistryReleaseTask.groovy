@@ -75,10 +75,10 @@ class RegistryReleaseTask extends DefaultTask {
         def client = new RegistryClient(registryUri, registryConfig.resolvedAuthToken)
         def specFileValue = specFile.isPresent() ? project.file(specFile) : null
         def description = readReadmeContent()
-        client.release(project.name, version, specFileValue, project.file(zipFile), plugin.provider, description)
+        client.release(plugin.pluginId, version, specFileValue, project.file(zipFile), plugin.provider, description)
 
         // Celebrate successful plugin upload! 🎉
-        project.logger.lifecycle("🎉 SUCCESS! Plugin '${project.name}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
+        project.logger.lifecycle("🎉 SUCCESS! Plugin '${plugin.pluginId}' version ${version} has been successfully released to Nextflow Registry [${registryUri}]!")
     }
 
     /**
