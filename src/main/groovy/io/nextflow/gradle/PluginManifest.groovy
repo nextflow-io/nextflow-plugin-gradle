@@ -17,7 +17,7 @@ class PluginManifest {
         final config = project.extensions.getByType(NextflowPluginConfig)
 
         jar.manifest.attributes(
-            'Plugin-Id': project.name,
+            'Plugin-Id': config.pluginId,
             'Plugin-Version': project.version,
             'Plugin-Requires': ">=${config.nextflowVersion}"
         )
