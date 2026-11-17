@@ -83,7 +83,7 @@ Option 3.
 
 ### Nextflow (summary)
 
-Nextflow checks only the structure of the ID (at most one `/`, no empty part, no `.` or `..`), not the naming rules. It stores namespaced plugins at `$NXF_HOME/plugins/<namespace>/<name>-<version>`, and uses a flat name with `~` for the lock file and the local plugin root symlink. Offline and embedded mode scan one level deeper. When a registry refuses a namespaced ID, the final error shows the registry response. See the ADR in the Nextflow repository.
+Nextflow checks only the structure of a namespaced ID (at most one `/`, no empty part, no `.` or `..`), not the naming rules. It stores namespaced plugins at `$NXF_HOME/plugins/<namespace>/<name>-<version>`, and uses a flat name with `~` for the lock file and the local plugin root symlink. Offline and embedded mode scan one level deeper. When a registry refuses a namespaced ID, Nextflow shows the registry response as a warning. See the ADR in the Nextflow repository.
 
 ### Registry (summary)
 
@@ -105,7 +105,7 @@ The registry reuses its namespace model for modules and pipelines: ID validation
 | Nextflow | Registry | Unscoped plugin | Namespaced plugin |
 |---|---|---|---|
 | old | old | works | not possible |
-| new | old | works | fails: clear message from Nextflow |
+| new | old | works | fails: clear message from Nextflow, shown as a warning, then "Cannot find version" |
 | old | new | works | fails: the registry message (`nextflowVersion` check) is shown as a warning, then "Cannot find version" |
 | new | new | works | works |
 
@@ -134,5 +134,5 @@ Nextflow versions that read the legacy `plugins.json` index never see namespaced
 
 - Pipelines that use namespaced plugins need a minimum Nextflow version. They should set `manifest.nextflowVersion`.
 - With an old registry, only the namespaced plugin fails. Nextflow asks again one plugin per request, so unscoped plugins of the same run still resolve.
-- Old Nextflow versions show the registry message only as a warning. This cannot be fixed in versions already released.
+- Nextflow shows the registry message as a warning, followed by the "Cannot find version" error.
 - Unscoped plugins, their store paths and older Nextflow versions are not affected.
