@@ -83,7 +83,7 @@ Option 3.
 
 ### Nextflow (summary)
 
-Nextflow checks only the structure of a namespaced ID (at most one `/`, no empty part, no `.` or `..`), not the naming rules. It stores namespaced plugins at `$NXF_HOME/plugins/<namespace>/<name>-<version>`, and uses a flat name with `~` for the lock file and the local plugin root symlink. Offline and embedded mode scan one level deeper. When a registry refuses a namespaced ID, Nextflow shows the registry response as a warning. See the ADR in the Nextflow repository.
+Nextflow checks only the structure of a namespaced ID (at most one `/`, no empty part, no `.` or `..`, no `~`), not the naming rules. It uses a flat name with `~` in place of `/` for every file name: the plugins store folder (`$NXF_HOME/plugins/<namespace>~<name>-<version>`) and the lock file. When a registry refuses a namespaced ID, Nextflow shows the registry response as a warning. See the ADR in the Nextflow repository.
 
 ### Registry (summary)
 
@@ -95,7 +95,7 @@ The registry reuses its namespace model for modules and pipelines: ID validation
 - The plugin ID is `<namespace>/<project.name>`, or `project.name` when no namespace is set.
 - `validate()` checks `namespace` with the registry namespace rule (`^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$`). The current check on `project.name` does not change.
 - The ID is used for the MANIFEST `Plugin-Id`, the release request (`id` in the JSON body of `POST v1/plugins/release`) and the log messages.
-- The local install task (`installPlugin`) copies the plugin to `plugins/<namespace>/<project.name>-<version>`, the same layout as the Nextflow store.
+- The local install task (`installPlugin`) copies the plugin to `plugins/<namespace>~<project.name>-<version>`, the same layout as the Nextflow store.
 - The zip stays `<project.name>-<version>.zip`. The registry and Nextflow expect this name.
 - `requirePlugins` is copied as is into `Plugin-Dependencies`, so namespaced dependencies already work.
 - With an old registry, the release request fails with the registry message "Plugin id 'myorg/nf-foo' is invalid". No extra code is needed.

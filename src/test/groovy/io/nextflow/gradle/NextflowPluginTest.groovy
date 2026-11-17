@@ -510,7 +510,7 @@ class NextflowPluginTest extends Specification {
         where:
         NS      | ID                  | DIR
         null    | 'test-plugin'       | 'test-plugin-1.0.0'
-        'myorg' | 'myorg/test-plugin' | 'myorg/test-plugin-1.0.0'
+        'myorg' | 'myorg/test-plugin' | 'myorg~test-plugin-1.0.0'
     }
 
 }

@@ -18,7 +18,8 @@ abstract class PluginInstallTask extends Sync {
 
         project.afterEvaluate {
             from(project.zipTree("${buildDir}/distributions/${project.name}-${project.version}.zip"))
-            into("${pluginsDir}/${config.pluginId}-${project.version}")
+            // same flat folder name as the Nextflow plugins store: myorg/nf-foo -> myorg~nf-foo
+            into("${pluginsDir}/${config.pluginId.replace('/', '~')}-${project.version}")
         }
 
         doLast {
