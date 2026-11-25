@@ -55,7 +55,7 @@ So a zip can only be loaded under the ID in its MANIFEST, unless Nextflow change
 - Authentication for private registries. Nextflow sends no token when it fetches plugin metadata or downloads a plugin. This is needed for private registries but is a separate decision.
 - Moving a plugin to a different name (`nf-foo` to `myorg/nf-bar`), or from one namespace to another.
 - An audit trail of who moved a plugin.
-- Lookup across several registries. It already works with `registry.url` and does not change.
+- Changing how Nextflow combines several registries. It already works with `registry.url`. The Nextflow ADR says how a moved plugin fits in.
 
 ## Considered Options
 
@@ -192,6 +192,7 @@ Plugin-Namespace: myorg
 - It stores a moved plugin once and links the other name to it. Offline runs read the map from these links.
 - Core plugin IDs change to `nextflow-io/...` in the release with namespace support.
 - When a registry refuses a namespaced ID, Nextflow shows the registry response as a warning.
+- With several registries, the first registry that reports a move sets the namespace of the plain name. The plain releases of registries that did not move the plugin are added to it.
 
 See the ADR in the Nextflow repository.
 
@@ -200,7 +201,7 @@ See the ADR in the Nextflow repository.
 - Reuses its namespace model for modules and pipelines: ID validation with an optional `<namespace>/` prefix, a `namespace_id` column on plugins, publish permission through namespace membership, `%2F`-encoded IDs in API routes, download file name `<name>-<version>.zip`, and a `plugins/` prefix in OCI storage.
 - Namespaced plugins are left out of the legacy `plugins.json`. Moved plugins stay in it under their plain name.
 - On publish, it checks `Plugin-Id` against the plugin name and `Plugin-Namespace` against the namespace. A moved plugin may publish without `Plugin-Namespace`, for patch releases built from older branches.
-- It refuses a namespaced ID when the request's `nextflowVersion` is older than a configured minimum: the first Nextflow release that reads `Plugin-Namespace`.
+- It refuses a namespaced ID when the request's `nextflowVersion` is older than a configured minimum: the first Nextflow release that reads `Plugin-Namespace`. For such a client, `/dependencies` also leaves out namespaced plugins found in the dependency walk, and the releases that depend on one.
 - Move: the owner of an unscoped plugin who is a member of the target namespace, or an admin, moves it from the plugin page. The record keeps its ID and gets the namespace. Both IDs resolve to it, and `/dependencies` returns the `canonicalId` hint.
 - Revoked namespace: the namespaced ID returns 410, and the plain name of a moved plugin keeps working.
 - Enforcement is a registry flag (`REGISTRY_PLUGINS_NAMESPACE_ENFORCED`), off by default. When on, unscoped plugins that did not move cannot publish, and new unscoped plugins cannot be claimed.
@@ -248,7 +249,7 @@ Moved plugins:
 What older Nextflow does not get:
 
 - new namespaced plugins, which have no plain name;
-- releases of a moved plugin that depend on a namespaced ID (the registry logs a warning at publish).
+- releases of a moved plugin that depend on a namespaced ID. The registry leaves them out of `/dependencies` for older Nextflow, so it picks the newest release it can load. It also logs a warning at publish.
 
 Older Nextflow sharing a plugin store with newer Nextflow, offline, with a version range:
 
