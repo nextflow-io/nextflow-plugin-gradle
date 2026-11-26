@@ -37,7 +37,7 @@ class NextflowPluginConfig {
     String nextflowVersion = '24.11.0-edge'
 
     /**
-     * Registry namespace; the plugin id becomes '<namespace>/<project.name>'.
+     * Registry namespace, written as 'Plugin-Namespace' in the MANIFEST; the plugin id becomes '<namespace>/<project.name>'.
      * (optional)
      */
     String namespace
