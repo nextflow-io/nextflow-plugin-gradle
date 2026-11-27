@@ -491,4 +491,27 @@ class NextflowPluginTest extends Specification {
         !messages.any { it.contains('compileSpecFileGroovy') }
     }
 
+    def "should write the namespace in the manifest and use the plugin id in the install path"() {
+        given:
+        project.nextflowPlugin {
+            provider = 'Test Author'
+            className = 'com.example.TestPlugin'
+            nextflowVersion = '24.04.0'
+            namespace = NS
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        project.tasks.jar.manifest.attributes['Plugin-Id'] == 'test-plugin'
+        project.tasks.jar.manifest.attributes['Plugin-Namespace'] == NS
+        project.tasks.installPlugin.destinationDir == project.file("${PluginInstallTask.nextflowPluginsDir[0]}/${DIR}")
+
+        where:
+        NS      | DIR
+        null    | 'test-plugin-1.0.0'
+        'myorg' | 'myorg~test-plugin-1.0.0'
+    }
+
 }

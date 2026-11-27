@@ -21,6 +21,10 @@ class PluginManifest {
             'Plugin-Version': project.version,
             'Plugin-Requires': ">=${config.nextflowVersion}"
         )
+        // older Nextflow ignores it and loads the plugin by its plain name
+        if (config.namespace) {
+            jar.manifest.attributes('Plugin-Namespace': config.namespace)
+        }
         if (config.className) {
             jar.manifest.attributes('Plugin-Class': config.className)
         }
